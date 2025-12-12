@@ -59,27 +59,27 @@ const TestimonialCard = ({ variant = "wide", isFirstRow = false }) => {
 
 const CardTestimonial = () => {
   return (
-    <section className="w-[80%] mx-auto my-12"> {/* top & bottom margin added */}
+    <section className="w-[90%] sm:w-[85%] md:w-[80%] mx-auto my-8 md:my-12">
       {/* Row 1: All cards with dark yellow scheme and light text */}
-      <div className="flex gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row gap-6 mb-6">
         <TestimonialCard variant="wide" isFirstRow={true} />
         <TestimonialCard variant="small" isFirstRow={true} />
       </div>
 
       {/* Row 2: All cards with light green scheme */}
-      <div className="flex gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row gap-6 mb-6">
         <TestimonialCard variant="small" isFirstRow={false} />
         <TestimonialCard variant="wide" isFirstRow={false} />
       </div>
 
       {/* Row 3: All cards with dark yellow scheme and light text */}
-      <div className="flex gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row gap-6 mb-6">
         <TestimonialCard variant="wide" isFirstRow={true} />
         <TestimonialCard variant="small" isFirstRow={true} />
       </div>
 
       {/* Row 4: All cards with light green scheme */}
-      <div className="flex gap-6">
+      <div className="flex flex-col sm:flex-row gap-6">
         <TestimonialCard variant="small" isFirstRow={false} />
         <TestimonialCard variant="wide" isFirstRow={false} />
       </div>

@@ -6,15 +6,15 @@ import TestimonialForm from "../components/reviews/TestimonialForm";
 
 const Page = () => {
   return (
-    <div className="w-full py-24 px-6 md:px-12 lg:px-20 bg-white">
+    <div className="w-full py-24 px-4 sm:px-6 md:px-12 lg:px-20 bg-white">
 
       {/* MAIN CONTAINER */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-center">
 
         {/* LEFT SIDE */}
         <div>
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl leading-snug italic mb-4"
+            className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl leading-snug italic mb-4"
             style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#173A00" }}
           >
             What Our Guests <br />
@@ -57,7 +57,7 @@ const Page = () => {
 
               {/* Rating Number */}
               <div
-                className="text-5xl font-bold"
+                className="text-4xl sm:text-5xl font-bold"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
               >
                 4.5
@@ -101,9 +101,9 @@ const Page = () => {
       </div>
 
       {/* TESTIMONIAL CARDS SECTION */}
-      <div className="mt-20">
+      <div className="mt-16 md:mt-20">
         <h3 
-          className="text-2xl md:text-3xl mb-12 text-center"
+          className="text-2xl sm:text-3xl mb-8 md:mb-12 text-center"
           style={{ fontFamily: "Playfair Display", fontStyle: "italic" }}
         >
           Guest Experiences

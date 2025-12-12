@@ -229,13 +229,19 @@ const OverviewSection = () => {
                     {/* TEXT */}
                     <h3
                       className="text-2xl italic mb-1"
-                      style={{ fontFamily: "Playfair Display" }}
+                      style={{ 
+                        fontFamily: "Playfair Display",
+                        color: isDark ? "white" : "black"
+                      }}
                     >
                       {card.title}
                     </h3>
                     <p
-                      className="text-sm text-gray-700"
-                      style={{ fontFamily: "Plus Jakarta Sans" }}
+                      className="text-sm"
+                      style={{ 
+                        fontFamily: "Plus Jakarta Sans",
+                        color: isDark ? "rgba(255, 255, 255, 0.9)" : "rgba(0, 0, 0, 0.8)"
+                      }}
                     >
                       "{card.description}"
                     </p>
