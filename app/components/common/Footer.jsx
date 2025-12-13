@@ -153,33 +153,27 @@ const Footer = () => {
     setToast(prev => ({ ...prev, isVisible: false }));
   };
 
-  // Web3Forms handler
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-
-    // Add Web3Forms access key - REPLACE WITH YOUR KEY
-    formData.append("access_key", "YOUR_ACCESS_KEY_HERE");
+    const email = formData.get('email');
 
     // Start ringing animation
     setIsRinging(true);
 
     try {
-      const object = Object.fromEntries(formData);
-      const json = JSON.stringify(object);
-
-      const res = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json"
+          'Content-Type': 'application/json',
         },
-        body: json
-      }).then((res) => res.json());
+        body: JSON.stringify({ email }),
+      });
 
-      if (res.success) {
-        showToast("Thanks! You're subscribed to our newsletter.", 'success');
-        e.target.reset();
+      if (response.ok) {
+        showToast("Thank you for subscribing!", 'success');
+        e.target.reset(); // Reset form
       } else {
         showToast("Something went wrong. Please try again.", 'error');
       }
@@ -194,7 +188,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="relative bg-[#2d5016] text-white px-4 sm:px-6 md:px-12 lg:px-20 pt-8 sm:pt-12 pb-8 sm:pb-12 min-h-screen">
+    <footer className="relative bg-[#2d5016] text-white px-4 sm:px-6 md:px-12 lg:px-20 pt-8 sm:pt-12 pb-20 sm:pb-24">
       {/* Top Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start mb-12 sm:mb-16">
         {/* Top Left - Newsletter */}
@@ -266,8 +260,8 @@ const Footer = () => {
         </nav>
       </div>
 
-      {/* Bottom Section */}
-      <div className="absolute bottom-8 sm:bottom-12 left-4 sm:left-6 md:left-12 lg:left-20 right-4 sm:right-6 md:right-12 lg:right-20">
+      {/* Bottom Section - Changed from absolute to relative positioning */}
+      <div className="mt-8 sm:mt-12">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 sm:gap-12">
           {/* Bottom Left - Brand Name and Description */}
           <div className="max-w-xl">

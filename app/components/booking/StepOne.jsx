@@ -50,50 +50,47 @@ const StepOne = ({ goToStep }) => {
   };
 
   return (
-    <div className="w-full min-h-[80vh] flex justify-center items-start py-12">
-
+    <div className="w-full min-h-[80vh] flex justify-center items-start py-8 md:py-12">
       {/* WRAPPER */}
-      <section className="w-[90%] min-h-[80vh] flex rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-
+      <section className="w-[95%] md:w-[90%] min-h-[80vh] flex flex-col md:flex-row rounded-2xl overflow-hidden border border-[#594B00]/20 shadow-sm">
         {/* LEFT SIDEBAR (REUSABLE) */}
         <BookingSidebar />
 
         {/* RIGHT CONTENT */}
-        <div className="w-[70%] p-12 flex flex-col items-center">
-
+        <div className="w-full md:w-[70%] p-6 md:p-12 flex flex-col items-center bg-white">
           {/* PROGRESS BAR */}
           <ProgressBar active={1} onBack={goToStep} />
 
           {/* TITLE */}
           <h2 
-            className="text-3xl font-serif text-center"
-            style={{ fontFamily: "Playfair Display", fontStyle: "italic" }}
+            className="text-2xl md:text-3xl font-serif text-center mb-6 md:mb-8"
+            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#594B00" }}
           >
             Select Your Check-in Date <br /> & Time
           </h2>
 
           {/* FORM CARD */}
-          <div className="mt-10 border border-gray-300 rounded-2xl p-8 w-[70%] bg-white">
-
+          <div className="mt-6 md:mt-10 border border-[#594B00]/20 rounded-2xl p-6 md:p-8 w-full max-w-2xl bg-[#FFFBE6]">
             {/* Check-in Date */}
             <label 
               className="font-sans text-sm"
-              style={{ fontFamily: "Plus Jakarta Sans" }}
+              style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
             >
               *Select Check-In Date
             </label>
             <div className="mt-1 relative" ref={checkInRef}>
               <div 
-                className="w-full bg-gray-200 p-3 rounded-full font-sans outline-none flex justify-between items-center cursor-pointer"
+                className="w-full bg-white p-3 rounded-full font-sans outline-none flex justify-between items-center cursor-pointer border border-[#594B00]/30"
+                style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={() => setShowCheckInCalendar(!showCheckInCalendar)}
               >
-                <span>{checkInDate || "Select date"}</span>
-                <AiOutlineCalendar className="text-gray-500" size={20} />
+                <span style={{ color: "#594B00" }}>{checkInDate || "Select date"}</span>
+                <AiOutlineCalendar className="text-[#594B00]" size={20} />
               </div>
               
               {/* Calendar Dropdown */}
               {showCheckInCalendar && (
-                <div className="absolute top-full left-0 mt-2 z-10">
+                <div className="absolute top-full left-0 mt-2 z-10 w-full md:w-auto">
                   <Calendar 
                     selectedDate={checkInDate}
                     onDateSelect={(date) => {
@@ -105,25 +102,26 @@ const StepOne = ({ goToStep }) => {
               )}
             </div>
 
-            {/* Check-Out Date */}
+            {/* Check-out Date */}
             <label 
-              className="font-sans text-sm mt-5"
-              style={{ fontFamily: "Plus Jakarta Sans" }}
+              className="font-sans text-sm mt-4 block"
+              style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
             >
               *Select Check-Out Date
             </label>
             <div className="mt-1 relative" ref={checkOutRef}>
               <div 
-                className="w-full bg-gray-200 p-3 rounded-full font-sans outline-none flex justify-between items-center cursor-pointer"
+                className="w-full bg-white p-3 rounded-full font-sans outline-none flex justify-between items-center cursor-pointer border border-[#594B00]/30"
+                style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={() => setShowCheckOutCalendar(!showCheckOutCalendar)}
               >
-                <span>{checkOutDate || "Select date"}</span>
-                <AiOutlineCalendar className="text-gray-500" size={20} />
+                <span style={{ color: "#594B00" }}>{checkOutDate || "Select date"}</span>
+                <AiOutlineCalendar className="text-[#594B00]" size={20} />
               </div>
               
               {/* Calendar Dropdown */}
               {showCheckOutCalendar && (
-                <div className="absolute top-full left-0 mt-2 z-10">
+                <div className="absolute top-full left-0 mt-2 z-10 w-full md:w-auto">
                   <Calendar 
                     selectedDate={checkOutDate}
                     onDateSelect={(date) => {
@@ -135,25 +133,26 @@ const StepOne = ({ goToStep }) => {
               )}
             </div>
 
-            {/* Check-In Time */}
+            {/* Check-in Time */}
             <label 
-              className="font-sans text-sm mt-5"
-              style={{ fontFamily: "Plus Jakarta Sans" }}
+              className="font-sans text-sm mt-4 block"
+              style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
             >
-              *Select Check-In Time
+              *Preferred Check-In Time
             </label>
             <div className="mt-1 relative" ref={timeRef}>
               <div 
-                className="w-full bg-gray-200 p-3 rounded-full font-sans outline-none flex justify-between items-center cursor-pointer"
+                className="w-full bg-white p-3 rounded-full font-sans outline-none flex justify-between items-center cursor-pointer border border-[#594B00]/30"
+                style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={() => setShowTimePicker(!showTimePicker)}
               >
-                <span>{formatTime(checkInTime)}</span>
-                <AiOutlineClockCircle className="text-gray-500" size={20} />
+                <span style={{ color: "#594B00" }}>{formatTime(checkInTime)}</span>
+                <AiOutlineClockCircle className="text-[#594B00]" size={20} />
               </div>
               
               {/* Time Picker Dropdown */}
               {showTimePicker && (
-                <div className="absolute top-full left-0 mt-2 z-10">
+                <div className="absolute top-full left-0 mt-2 z-10 w-full md:w-auto">
                   <TimePicker 
                     selectedTime={checkInTime}
                     onTimeSelect={(time) => {
@@ -168,25 +167,25 @@ const StepOne = ({ goToStep }) => {
             {/* CHECKBOXES */}
             <div className="mt-6 space-y-2">
               <label 
-                className="flex items-center gap-2 text-sm font-sans text-gray-600"
+                className="flex items-center gap-2 text-sm font-sans text-[#594B00]"
                 style={{ fontFamily: "Plus Jakarta Sans" }}
               >
-                <input type="checkbox" />
+                <input type="checkbox" className="rounded text-[#594B00] focus:ring-[#594B00]" />
                 I have Read the terms and Condition
               </label>
 
               <label 
-                className="flex items-center gap-2 text-sm font-sans text-gray-600"
+                className="flex items-center gap-2 text-sm font-sans text-[#594B00]"
                 style={{ fontFamily: "Plus Jakarta Sans" }}
               >
-                <input type="checkbox" />
+                <input type="checkbox" className="rounded text-[#594B00] focus:ring-[#594B00]" />
                 I have Read the Cancellation Policy
               </label>
             </div>
 
             {/* BUTTON */}
             <button
-              className="mt-6 w-full bg-black text-white p-3 rounded-full font-sans"
+              className="mt-6 w-full bg-[#594B00] text-white p-3 rounded-full font-sans hover:bg-[#594B00]/90 transition"
               style={{ fontFamily: "Plus Jakarta Sans" }}
               onClick={() => goToStep(2)}
             >
@@ -195,7 +194,7 @@ const StepOne = ({ goToStep }) => {
 
             {/* TEXT BOTTOM LEFT */}
             <p 
-              className="mt-4 text-xs text-gray-500 font-sans text-left"
+              className="mt-4 text-xs text-[#594B00]/70 font-sans text-center md:text-left"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
               *Choose your stay dates. Entire homestay is ₹9,900 per night.*

@@ -11,15 +11,15 @@ const ProgressBar = ({ active = 1, onBack }) => {
   ];
 
   return (
-    <div className="flex items-center gap-4 mb-10 w-full">
+    <div className="flex items-center gap-2 md:gap-4 mb-6 md:mb-10 w-full">
       {/* Back Button */}
       {active > 1 && onBack && (
         <button 
           onClick={() => onBack(active - 1)}
-          className="flex items-center gap-1 text-sm text-gray-600 hover:text-black mr-4"
+          className="flex items-center gap-1 text-sm text-[#594B00] hover:text-[#173A00] mr-2 md:mr-4"
         >
           <ArrowLeft size={16} />
-          Back
+          <span className="hidden md:inline">Back</span>
         </button>
       )}
 
@@ -29,17 +29,17 @@ const ProgressBar = ({ active = 1, onBack }) => {
           <React.Fragment key={step.id}>
             {/* Step Circle */}
             <div className="flex flex-col items-center relative">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium z-10 relative
+              <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs font-medium z-10 relative
                 ${step.id < active 
-                  ? "bg-black text-white" 
+                  ? "bg-[#594B00] text-white" 
                   : step.id === active 
-                    ? "bg-black text-white border-2 border-black" 
-                    : "bg-white text-gray-400 border-2 border-gray-300"}
+                    ? "bg-[#594B00] text-white border-2 border-[#594B00]" 
+                    : "bg-white text-[#594B00] border-2 border-[#594B00]/30"}
               `}>
                 {step.id}
               </div>
-              <span className={`text-xs mt-2 absolute top-8 whitespace-nowrap ${
-                step.id <= active ? "text-black font-medium" : "text-gray-500"
+              <span className={`text-[10px] md:text-xs mt-1 md:mt-2 absolute top-7 md:top-8 whitespace-nowrap ${
+                step.id <= active ? "text-[#594B00] font-medium" : "text-[#594B00]/50"
               }`}>
                 {step.label}
               </span>
@@ -50,7 +50,7 @@ const ProgressBar = ({ active = 1, onBack }) => {
               <div className="flex-1 h-0.5 relative">
                 <div 
                   className={`h-0.5 absolute top-0 left-0 transition-all duration-300 ${
-                    step.id < active ? "bg-black w-full" : "bg-gray-300 w-full"
+                    step.id < active ? "bg-[#594B00] w-full" : "bg-[#594B00]/30 w-full"
                   }`} 
                 />
               </div>

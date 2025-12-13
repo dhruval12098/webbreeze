@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import ReviewSection from "./components/home/ReviewSection";
 import OverviewSection from "./components/home/OverviewSection";
@@ -27,7 +28,6 @@ const Hero = () => {
 
   return (
     <section className="w-[98%] mx-auto rounded-3xl h-screen flex relative overflow-hidden mt-6">
-
       {/* BACKGROUND SLIDER */}
       <div className="absolute inset-0">
         {slides.map((src, i) => (
@@ -62,9 +62,9 @@ const Hero = () => {
 
         {/* BUTTONS */}
         <div className="flex gap-4 mt-6 flex-wrap">
-          <button className="px-6 py-2.5 rounded-full bg-white text-black flex items-center gap-2 text-sm hover:bg-gray-200 transition">
+          <Link href="/booking" className="px-6 py-2.5 rounded-full bg-white text-black flex items-center gap-2 text-sm hover:bg-gray-200 transition">
             Book Now <ArrowUpRight size={16} />
-          </button>
+          </Link>
 
           <button className="px-5 py-2.5 bg-white/20 backdrop-blur-md border border-gray-300 rounded-full text-sm flex items-center gap-3">
             <div className="relative flex w-14 h-6">

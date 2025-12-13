@@ -120,6 +120,7 @@ const Page = () => {
                   <button
                     className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent"
                     style={{ fontFamily: "Plus Jakarta Sans" }}
+                    onClick={() => window.location.href = "/booking"}
                   >
                     BOOK NOW
                     <div className="w-8 h-8 bg-[#594B00] text-white rounded-full flex items-center justify-center">
@@ -294,6 +295,7 @@ const Page = () => {
               <button
                 className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent"
                 style={{ fontFamily: "Plus Jakarta Sans" }}
+                onClick={() => window.location.href = "/booking"}
               >
                 BOOK NOW
                 <div className="w-8 h-8 bg-[#594B00] text-white rounded-full flex items-center justify-center">

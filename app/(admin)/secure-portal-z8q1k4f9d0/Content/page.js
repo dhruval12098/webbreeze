@@ -59,15 +59,15 @@ export default ContentPage;
 
 // REUSABLE CARD COMPONENT
 const Card = ({ title, description, editPath }) => (
-  <div className="bg-white rounded-2xl shadow-[0_4px_18px_rgba(0,0,0,0.05)] p-6 border border-[#0A3D2E15] flex justify-between items-start">
-    <div>
+  <div className="bg-white rounded-2xl shadow-[0_4px_18px_rgba(0,0,0,0.05)] p-6 border border-[#0A3D2E15] flex flex-col h-full">
+    <div className="flex-1">
       <h2 className="text-xl font-semibold text-[#0A3D2E]">{title}</h2>
       <p className="text-gray-600 mt-1">{description}</p>
     </div>
 
     <Link 
       href={editPath}
-      className="flex items-center gap-2 bg-[#0A3D2E] text-white px-4 py-2 rounded-xl hover:bg-[#082f24] transition"
+      className="flex items-center gap-2 bg-[#0A3D2E] text-white px-4 py-2 rounded-xl hover:bg-[#082f24] transition mt-4 w-fit"
     >
       <Pencil size={16} />
       Edit
@@ -77,17 +77,11 @@ const Card = ({ title, description, editPath }) => (
 
 /* ---------------- HOME TAB ---------------- */
 const HomeTab = () => (
-  <div className="space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <Card
       title="Hero Section"
       description="Edit your main banner title, subtitle and call to action."
       editPath="/secure-portal-z8q1k4f9d0/Content/edit/home/hero-section"
-    />
-
-    <Card
-      title="Overview Cards"
-      description="Manage key highlight cards displayed on the homepage."
-      editPath="/secure-portal-z8q1k4f9d0/Content/edit/home/overview-cards"
     />
 
     <Card
@@ -100,7 +94,7 @@ const HomeTab = () => (
 
 /* ---------------- ROOMS TAB ---------------- */
 const RoomsTab = () => (
-  <div className="space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <Card
       title="Room Description"
       description="Edit the main description for your room."
@@ -117,7 +111,7 @@ const RoomsTab = () => (
 
 /* ---------------- GALLERY TAB ---------------- */
 const GalleryTab = () => (
-  <div className="space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <Card
       title="Image Gallery"
       description="Upload new images and manage your visual gallery."
@@ -128,7 +122,7 @@ const GalleryTab = () => (
 
 /* ---------------- ABOUT TAB ---------------- */
 const AboutTab = () => (
-  <div className="space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <Card
       title="Meet Your Host"
       description="Update profile details of the host or owner."
@@ -151,7 +145,7 @@ const AboutTab = () => (
 
 /* ---------------- REVIEWS TAB ---------------- */
 const ReviewsTab = () => (
-  <div className="space-y-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <Card
       title="Guest Reviews"
       description="View or manage visitor reviews and testimonial content."

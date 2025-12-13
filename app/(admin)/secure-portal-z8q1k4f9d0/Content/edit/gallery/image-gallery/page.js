@@ -21,10 +21,11 @@ const ImageGalleryEditPage = () => {
     const files = Array.from(e.target.files);
     const newImages = [];
 
-    // Check if we can add more images (max 20)
+    // Check if we can add more images (max 30 for homestay, max 20 for guest)
     const currentImages = galleries[galleryType];
-    if (currentImages.length >= 20) {
-      alert("Maximum of 20 images allowed per gallery");
+    const maxImages = galleryType === "homestay" ? 30 : 20;
+    if (currentImages.length >= maxImages) {
+      alert(`Maximum of ${maxImages} images allowed for ${galleryType} gallery`);
       return;
     }
 
@@ -37,7 +38,7 @@ const ImageGalleryEditPage = () => {
       }
 
       // Check if we can still add more images
-      if (currentImages.length + newImages.length < 20) {
+      if (currentImages.length + newImages.length < maxImages) {
         const reader = new FileReader();
         reader.onload = (e) => {
           newImages.push({
@@ -49,7 +50,7 @@ const ImageGalleryEditPage = () => {
           });
           
           // Add images to state when we've processed all files
-          if (newImages.length === Math.min(files.length, 20 - currentImages.length)) {
+          if (newImages.length === Math.min(files.length, maxImages - currentImages.length)) {
             setGalleries(prev => ({
               ...prev,
               [galleryType]: [...prev[galleryType], ...newImages]
@@ -105,9 +106,20 @@ const ImageGalleryEditPage = () => {
 
   return (
     <div className="w-full min-h-screen bg-white px-6 py-8">
-      <h1 className="text-3xl font-semibold tracking-tight mb-8 text-[#0A3D2E]">
-        Edit Image Gallery
-      </h1>
+      <div className="flex items-center gap-4 mb-8">
+        <button 
+          onClick={() => window.history.back()}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back
+        </button>
+        <h1 className="text-3xl font-semibold tracking-tight text-[#0A3D2E]">
+          Edit Image Gallery
+        </h1>
+      </div>
       
       <div className="bg-white rounded-2xl shadow-[0_4px_18px_rgba(0,0,0,0.05)] p-6 border border-[#0A3D2E15]">
         <form className="space-y-6" onSubmit={openSaveDialog}>
@@ -211,7 +223,7 @@ const ImageGalleryEditPage = () => {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Images (Max 20 images, up to 2MB each)
+                  Upload Images (Max 30 images, up to 2MB each)
                 </label>
                 
                 {/* Image Preview Area */}
@@ -240,7 +252,7 @@ const ImageGalleryEditPage = () => {
                 )}
                 
                 {/* Upload Button */}
-                {galleries.homestay.length < 20 && (
+                {galleries.homestay.length < 30 && (
                   <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
                     <input 
                       type="file" 
@@ -249,7 +261,7 @@ const ImageGalleryEditPage = () => {
                       onChange={(e) => handleImageUpload("homestay", e)}
                       className="hidden" 
                       id="homestay-image-upload" 
-                      disabled={galleries.homestay.length >= 20}
+                      disabled={galleries.homestay.length >= 30}
                     />
                     <label 
                       htmlFor="homestay-image-upload" 
@@ -257,7 +269,7 @@ const ImageGalleryEditPage = () => {
                     >
                       <p>Click to upload images</p>
                       <p className="text-sm text-gray-500 mt-2">
-                        {galleries.homestay.length}/20 images uploaded
+                        {galleries.homestay.length}/30 images uploaded
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         PNG, JPG, GIF up to 2MB
@@ -266,9 +278,9 @@ const ImageGalleryEditPage = () => {
                   </div>
                 )}
                 
-                {galleries.homestay.length >= 20 && (
+                {galleries.homestay.length >= 30 && (
                   <p className="text-sm text-gray-500 text-center">
-                    Maximum of 20 images reached
+                    Maximum of 30 images reached
                   </p>
                 )}
               </div>

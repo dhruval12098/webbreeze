@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
 const Navbar = () => {
-  const [activeTab, setActiveTab] = useState('login')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const currentPath = usePathname()
 
@@ -47,26 +46,18 @@ const Navbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden lg:flex gap-3 h-14 bg-[#E0ECD9] rounded-full px-2.5 py-2 items-center">
-            <button
-              className={`rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light ${
-                activeTab === 'login'
-                  ? 'bg-[#173A00] text-white border-2 border-[#173A00]'
-                  : 'bg-transparent text-[#173A00] hover:bg-[#C5D9B9]'
-              }`}
-              onClick={() => setActiveTab('login')}
+            <a
+              href="/login"
+              className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9]"
             >
               Login
-            </button>
-            <button
-              className={`rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light ${
-                activeTab === 'signup'
-                  ? 'bg-[#173A00] text-white border-2 border-[#173A00]'
-                  : 'bg-transparent text-[#173A00] hover:bg-[#C5D9B9]'
-              }`}
-              onClick={() => setActiveTab('signup')}
+            </a>
+            <a
+              href="/signup"
+              className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
             >
               Sign-up
-            </button>
+            </a>
           </div>
 
           {/* Mobile Hamburger */}
@@ -128,32 +119,20 @@ const Navbar = () => {
 
           {/* Mobile Auth Buttons */}
           <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
-            <button
-              className={`rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 ${
-                activeTab === 'login'
-                  ? 'bg-[#173A00] text-white border-2 border-[#173A00]'
-                  : 'bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]'
-              }`}
-              onClick={() => {
-                setActiveTab('login')
-                setIsMenuOpen(false)
-              }}
+            <a
+              href="/login"
+              className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+              onClick={() => setIsMenuOpen(false)}
             >
               Login
-            </button>
-            <button
-              className={`rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 ${
-                activeTab === 'signup'
-                  ? 'bg-[#173A00] text-white border-2 border-[#173A00]'
-                  : 'bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]'
-              }`}
-              onClick={() => {
-                setActiveTab('signup')
-                setIsMenuOpen(false)
-              }}
+            </a>
+            <a
+              href="/signup"
+              className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+              onClick={() => setIsMenuOpen(false)}
             >
               Sign-up
-            </button>
+            </a>
           </div>
         </div>
       </div>
