@@ -5,21 +5,8 @@ import { authenticateRequest } from '@/app/api/middleware/auth';
 // GET /api/gallery-images - Fetch gallery images
 export async function GET(request) {
   try {
-    // Skip authentication during development/testing
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Skipping authentication in development mode');
-    } else {
-      try {
-        const authCheck = await authenticateRequest(request);
-        if (authCheck) return authCheck; // Return unauthorized response if auth fails
-      } catch (authError) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Authentication error: ' + authError.message }),
-          { status: 401, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
+    // Public endpoint - no authentication required to view gallery images
+    
     const { searchParams } = new URL(request.url);
     const galleryType = searchParams.get('type');
 
@@ -231,3 +218,5 @@ export async function DELETE(request) {
     );
   }
 }
+
+
