@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Trash2 } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
 
@@ -9,6 +9,8 @@ const ImageGalleryEditPage = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   // Gallery State
   const [galleries, setGalleries] = useState({
@@ -16,11 +18,51 @@ const ImageGalleryEditPage = () => {
     homestay: []
   });
 
-  // Handle image upload for a specific gallery
-  const handleImageUpload = (galleryType, e) => {
-    const files = Array.from(e.target.files);
-    const newImages = [];
+  // Load existing images when component mounts
+  useEffect(() => {
+    loadGalleryImages();
+  }, []);
 
+  // Load images from API
+  const loadGalleryImages = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/gallery-images');
+      const result = await response.json();
+      
+      if (result.success) {
+        // Separate images by gallery type
+        const guestImages = result.images.filter(img => img.gallery_type === 'guest');
+        const homestayImages = result.images.filter(img => img.gallery_type === 'homestay');
+        
+        setGalleries({
+          guest: guestImages.map(img => ({
+            id: img.id,
+            url: img.image_url,
+            name: img.image_url.split('/').pop(),
+            size: `${(img.file_size_kb / 1024).toFixed(2)} MB`
+          })),
+          homestay: homestayImages.map(img => ({
+            id: img.id,
+            url: img.image_url,
+            name: img.image_url.split('/').pop(),
+            size: `${(img.file_size_kb / 1024).toFixed(2)} MB`
+          }))
+        });
+      } else {
+        setError(result.error || 'Failed to load images');
+      }
+    } catch (err) {
+      setError('Failed to load images: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle image upload for a specific gallery
+  const handleImageUpload = async (galleryType, e) => {
+    const files = Array.from(e.target.files);
+    
     // Check if we can add more images (max 30 for homestay, max 20 for guest)
     const currentImages = galleries[galleryType];
     const maxImages = galleryType === "homestay" ? 30 : 20;
@@ -29,37 +71,61 @@ const ImageGalleryEditPage = () => {
       return;
     }
 
-    files.forEach(file => {
-      // Check file size (maximum 2MB)
-      const fileSizeInMB = file.size / (1024 * 1024);
-      if (fileSizeInMB > 2) {
-        alert(`File ${file.name} exceeds maximum size of 2MB`);
-        return;
-      }
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Process each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Check file size (maximum 1MB = 1024KB)
+        const fileSizeInKB = file.size / 1024;
+        if (fileSizeInKB > 1024) {
+          alert(`File ${file.name} exceeds maximum size of 1MB`);
+          continue;
+        }
 
-      // Check if we can still add more images
-      if (currentImages.length + newImages.length < maxImages) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          newImages.push({
-            id: Date.now() + Math.random(),
-            file: file,
-            preview: e.target.result,
-            name: file.name,
-            size: `${fileSizeInMB.toFixed(2)} MB`
+        // Check if we can still add more images
+        if (currentImages.length + i < maxImages) {
+          // Create FormData for upload
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('galleryType', galleryType);
+          formData.append('sortOrder', currentImages.length + i);
+
+          // Upload to API
+          const response = await fetch('/api/gallery-images', {
+            method: 'POST',
+            body: formData
           });
+
+          const result = await response.json();
           
-          // Add images to state when we've processed all files
-          if (newImages.length === Math.min(files.length, maxImages - currentImages.length)) {
+          if (result.success) {
+            // Add to state
             setGalleries(prev => ({
               ...prev,
-              [galleryType]: [...prev[galleryType], ...newImages]
+              [galleryType]: [
+                ...prev[galleryType],
+                {
+                  id: result.image.id,
+                  url: result.image.image_url,
+                  name: file.name,
+                  size: `${(fileSizeInKB / 1024).toFixed(2)} MB`
+                }
+              ]
             }));
+          } else {
+            setError(result.error || 'Failed to upload image');
           }
-        };
-        reader.readAsDataURL(file);
+        }
       }
-    });
+    } catch (err) {
+      setError('Upload failed: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Open delete confirmation dialog
@@ -69,25 +135,50 @@ const ImageGalleryEditPage = () => {
   };
 
   // Confirm delete action
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (imageToDelete) {
-      setGalleries(prev => ({
-        ...prev,
-        [imageToDelete.galleryType]: prev[imageToDelete.galleryType].filter(
-          image => image.id !== imageToDelete.imageId
-        )
-      }));
-      setShowDeleteDialog(false);
-      setImageToDelete(null);
+      setIsLoading(true);
+      
+      try {
+        // Find the image to get its URL
+        const image = galleries[imageToDelete.galleryType].find(
+          img => img.id === imageToDelete.imageId
+        );
+        
+        if (image) {
+          // Delete from API
+          const response = await fetch('/api/gallery-images', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              imageUrl: image.url
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Remove from state
+            setGalleries(prev => ({
+              ...prev,
+              [imageToDelete.galleryType]: prev[imageToDelete.galleryType].filter(
+                img => img.id !== imageToDelete.imageId
+              )
+            }));
+          } else {
+            setError(result.error || 'Failed to delete image');
+          }
+        }
+      } catch (err) {
+        setError('Delete failed: ' + err.message);
+      } finally {
+        setIsLoading(false);
+        setShowDeleteDialog(false);
+        setImageToDelete(null);
+      }
     }
-  };
-
-  // Remove image from a specific gallery
-  const removeImage = (galleryType, id) => {
-    setGalleries(prev => ({
-      ...prev,
-      [galleryType]: prev[galleryType].filter(image => image.id !== id)
-    }));
   };
 
   // Open save confirmation dialog
@@ -98,14 +189,20 @@ const ImageGalleryEditPage = () => {
 
   // Confirm save action
   const confirmSave = () => {
-    // Handle form submission
-    console.log({ galleries });
+    // Reload images to ensure consistency
+    loadGalleryImages();
     setShowSaveDialog(false);
-    // Here you would typically send the data to your backend
   };
 
   return (
     <div className="w-full min-h-screen bg-white px-6 py-8">
+      {(isLoading || error) && (
+        <div className="mb-4 p-4 rounded-lg bg-blue-50 text-blue-800">
+          {isLoading && "Processing... Please wait."}
+          {error && `Error: ${error}`}
+        </div>
+      )}
+      
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={() => window.history.back()}
@@ -154,7 +251,7 @@ const ImageGalleryEditPage = () => {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Images (Max 20 images, up to 2 MB each)
+                  Upload Images (Max 20 images, up to 1 MB each)
                 </label>
                 
                 {/* Image Preview Area */}
@@ -163,7 +260,7 @@ const ImageGalleryEditPage = () => {
                     {galleries.guest.map((image) => (
                       <div key={image.id} className="relative group">
                         <img 
-                          src={image.preview} 
+                          src={image.url} 
                           alt="Preview" 
                           className="w-full h-32 object-cover rounded-lg"
                         />
@@ -192,7 +289,7 @@ const ImageGalleryEditPage = () => {
                       onChange={(e) => handleImageUpload("guest", e)}
                       className="hidden" 
                       id="guest-image-upload" 
-                      disabled={galleries.guest.length >= 20}
+                      disabled={galleries.guest.length >= 20 || isLoading}
                     />
                     <label 
                       htmlFor="guest-image-upload" 
@@ -203,7 +300,7 @@ const ImageGalleryEditPage = () => {
                         {galleries.guest.length}/20 images uploaded
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        PNG, JPG, GIF up to 2MB
+                        PNG, JPG, GIF up to 1MB
                       </p>
                     </label>
                   </div>
@@ -223,7 +320,7 @@ const ImageGalleryEditPage = () => {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Images (Max 30 images, up to 2MB each)
+                  Upload Images (Max 30 images, up to 1MB each)
                 </label>
                 
                 {/* Image Preview Area */}
@@ -232,7 +329,7 @@ const ImageGalleryEditPage = () => {
                     {galleries.homestay.map((image) => (
                       <div key={image.id} className="relative group">
                         <img 
-                          src={image.preview} 
+                          src={image.url} 
                           alt="Preview" 
                           className="w-full h-32 object-cover rounded-lg"
                         />
@@ -261,7 +358,7 @@ const ImageGalleryEditPage = () => {
                       onChange={(e) => handleImageUpload("homestay", e)}
                       className="hidden" 
                       id="homestay-image-upload" 
-                      disabled={galleries.homestay.length >= 30}
+                      disabled={galleries.homestay.length >= 30 || isLoading}
                     />
                     <label 
                       htmlFor="homestay-image-upload" 
@@ -272,7 +369,7 @@ const ImageGalleryEditPage = () => {
                         {galleries.homestay.length}/30 images uploaded
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        PNG, JPG, GIF up to 2MB
+                        PNG, JPG, GIF up to 1MB
                       </p>
                     </label>
                   </div>
@@ -292,8 +389,9 @@ const ImageGalleryEditPage = () => {
             <button
               type="submit"
               className="bg-[#0A3D2E] text-white px-6 py-2 rounded-xl hover:bg-[#082f24] transition"
+              disabled={isLoading}
             >
-              Save Changes
+              Refresh Gallery
             </button>
           </div>
         </form>
@@ -316,10 +414,10 @@ const ImageGalleryEditPage = () => {
         isOpen={showSaveDialog}
         onClose={() => setShowSaveDialog(false)}
         onConfirm={confirmSave}
-        title="Save Changes"
-        message="Are you sure you want to save these changes to the image galleries?"
-        confirmText="Save"
-        cancelText="Cancel"
+        title="Refresh Gallery"
+        message="Gallery refreshed successfully!"
+        confirmText="OK"
+        cancelText=""
         type="info"
       />
     </div>

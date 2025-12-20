@@ -1,41 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Trash2, Plus } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
+import { guestReviewsApi } from "@/app/lib/apiClient";
+import { uploadImageToStorage } from "@/app/lib/imageService";
+import { supabase } from "@/app/lib/supabaseClient";
+import { toast } from "react-toastify";
 
 const GuestReviewsEditPage = () => {
-  // Sample initial reviews data
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      reviewerName: "John Doe",
-      designation: "Business Traveler",
-      reviewText: "Amazing experience! The homestay was perfect and the host was very welcoming.",
-      rating: 5,
-      date: "2023-10-15",
-      image: null
-    },
-    {
-      id: 2,
-      reviewerName: "Jane Smith",
-      designation: "Family Vacation",
-      reviewText: "Beautiful location and comfortable stay. Will definitely come back!",
-      rating: 4,
-      date: "2023-09-22",
-      image: null
-    },
-    {
-      id: 3,
-      reviewerName: "Robert Johnson",
-      designation: "Solo Traveler",
-      reviewText: "Good value for money. The place was clean and well maintained.",
-      rating: 4,
-      date: "2023-08-30",
-      image: null
-    }
-  ]);
-
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState(null);
@@ -46,6 +23,40 @@ const GuestReviewsEditPage = () => {
     rating: "",
     image: null
   });
+
+  // Fetch all reviews from the database
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        const response = await guestReviewsApi.getAll();
+        
+        if (response.success) {
+          // Map the API response to match the component's expected structure
+          const formattedReviews = response.data.map(review => ({
+            id: review.id,
+            reviewerName: review.reviewer_name,
+            designation: review.designation,
+            reviewText: review.review_text,
+            rating: review.rating,
+            date: review.date,
+            image: review.image_url
+          }));
+          setReviews(formattedReviews);
+        } else {
+          setError(response.error || "Failed to fetch reviews");
+          toast.error("Failed to load reviews: " + (response.error || "Unknown error"));
+        }
+      } catch (err) {
+        setError(err.message || "An error occurred while fetching reviews");
+        toast.error("Error loading reviews: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, []);
 
   // Handle input changes for new review
   const handleInputChange = (field, value) => {
@@ -59,10 +70,10 @@ const GuestReviewsEditPage = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (maximum 2MB)
+      // Check file size (maximum 5MB)
       const fileSizeInMB = file.size / (1024 * 1024);
-      if (fileSizeInMB > 2) {
-        alert(`File exceeds maximum size of 2MB`);
+      if (fileSizeInMB > 5) {
+        toast.error(`File exceeds maximum size of 5MB`);
         return;
       }
       
@@ -95,11 +106,23 @@ const GuestReviewsEditPage = () => {
   };
 
   // Confirm delete action
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (reviewToDelete) {
-      setReviews(prev => prev.filter(review => review.id !== reviewToDelete));
-      setShowDeleteDialog(false);
-      setReviewToDelete(null);
+      try {
+        const response = await guestReviewsApi.delete(reviewToDelete);
+        
+        if (response.success) {
+          setReviews(prev => prev.filter(review => review.id !== reviewToDelete));
+          toast.success("Review deleted successfully!");
+        } else {
+          toast.error("Failed to delete review: " + (response.error || "Unknown error"));
+        }
+      } catch (error) {
+        toast.error("Error deleting review: " + error.message);
+      } finally {
+        setShowDeleteDialog(false);
+        setReviewToDelete(null);
+      }
     }
   };
 
@@ -116,24 +139,64 @@ const GuestReviewsEditPage = () => {
   };
 
   // Handle create review
-  const handleCreateReview = () => {
-    if (newReview.reviewerName && newReview.designation && newReview.reviewText && newReview.rating) {
-      const review = {
-        id: Date.now(),
-        ...newReview,
-        rating: parseInt(newReview.rating),
-        date: new Date().toISOString().split('T')[0]
-      };
+  const handleCreateReview = async () => {
+    if (!newReview.reviewerName || !newReview.designation || !newReview.reviewText || !newReview.rating) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      let imageUrl = null;
       
-      setReviews(prev => [...prev, review]);
-      setShowCreateDialog(false);
-      setNewReview({
-        reviewerName: "",
-        designation: "",
-        reviewText: "",
-        rating: "",
-        image: null
-      });
+      // Upload image if provided
+      if (newReview.image && newReview.image.file) {
+        const uploadResult = await uploadImageToStorage(newReview.image.file, 'guest-reviews', supabase);
+        if (uploadResult.success) {
+          imageUrl = uploadResult.publicUrl;
+        } else {
+          throw new Error(uploadResult.error || "Failed to upload image");
+        }
+      }
+
+      // Prepare review data
+      const reviewData = {
+        reviewer_name: newReview.reviewerName,
+        designation: newReview.designation,
+        review_text: newReview.reviewText,
+        rating: parseInt(newReview.rating),
+        date: new Date().toISOString().split('T')[0],
+        image_url: imageUrl
+      };
+
+      const response = await guestReviewsApi.create(reviewData);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        // Format the new review to match the component's structure
+        const newReviewFormatted = {
+          id: response.data[0].id,
+          reviewerName: response.data[0].reviewer_name,
+          designation: response.data[0].designation,
+          reviewText: response.data[0].review_text,
+          rating: response.data[0].rating,
+          date: response.data[0].date,
+          image: response.data[0].image_url
+        };
+        
+        setReviews(prev => [...prev, newReviewFormatted]);
+        toast.success("Review added successfully!");
+        setShowCreateDialog(false);
+        setNewReview({
+          reviewerName: "",
+          designation: "",
+          reviewText: "",
+          rating: "",
+          image: null
+        });
+      } else {
+        throw new Error(response.error || "Failed to create review");
+      }
+    } catch (error) {
+      toast.error("Error adding review: " + error.message);
     }
   };
 
@@ -152,6 +215,44 @@ const GuestReviewsEditPage = () => {
       </div>
     );
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-white px-6 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight text-[#0A3D2E]">
+            Manage Guest Reviews
+          </h1>
+        </div>
+        <div className="text-center py-12">
+          <p>Loading reviews...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="w-full min-h-screen bg-white px-6 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight text-[#0A3D2E]">
+            Manage Guest Reviews
+          </h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-red-500">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-[#0A3D2E] text-white px-4 py-2 rounded-lg hover:bg-[#082f24]"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-white px-6 py-8">
@@ -246,7 +347,7 @@ const GuestReviewsEditPage = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reviewer Name
+                Reviewer Name *
               </label>
               <input
                 type="text"
@@ -258,7 +359,7 @@ const GuestReviewsEditPage = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Designation
+                Designation *
               </label>
               <input
                 type="text"
@@ -270,7 +371,7 @@ const GuestReviewsEditPage = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Review Content
+                Review Content *
               </label>
               <textarea
                 value={newReview.reviewText}
@@ -282,7 +383,7 @@ const GuestReviewsEditPage = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rating
+                Rating *
               </label>
               <select
                 value={newReview.rating}
@@ -330,7 +431,7 @@ const GuestReviewsEditPage = () => {
                     className="cursor-pointer text-gray-600 hover:text-gray-800 text-sm"
                   >
                     <div>Click to upload image</div>
-                    <div className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</div>
+                    <div className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</div>
                   </label>
                 </div>
               )}

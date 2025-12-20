@@ -1,16 +1,47 @@
 "use client";
 
-import React, { useState } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
+import { updateImage } from '@/app/lib/imageService';
+import { meetHostApi } from '@/app/lib/apiClient';
+import { supabase } from '@/app/lib/supabaseClient';
 
 const MeetYourHostEditPage = () => {
   const [hostData, setHostData] = useState({
-    heading: "",
-    subheading: "",
+    title: "",
+    description: "",
     image: null
   });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [previousImageUrl, setPreviousImageUrl] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  // Load existing data from API
+  useEffect(() => {
+    const fetchHostData = async () => {
+      try {
+        const response = await meetHostApi.get();
+        const { data } = response;
+
+        if (data) {
+          const host = data;
+          setHostData({
+            title: host.title || "",
+            description: host.description || "",
+            image: host.image_url ? { url: host.image_url, isExisting: true } : null
+          });
+          setPreviousImageUrl(host.image_url || null);
+        }
+      } catch (error) {
+        console.error('Error fetching meet host data:', error);
+        showToast('Error loading meet host data', 'error');
+      }
+    };
+
+    fetchHostData();
+  }, []);
 
   // Handle image upload
   const handleImageUpload = (e) => {
@@ -30,12 +61,27 @@ const MeetYourHostEditPage = () => {
     }
   };
 
-  // Remove image
-  const removeImage = () => {
+  // Open delete confirmation dialog
+  const openDeleteDialog = () => {
+    setShowDeleteDialog(true);
+  };
+
+  // Confirm image deletion
+  const confirmDelete = () => {
     setHostData(prev => ({
       ...prev,
       image: null
     }));
+    setShowDeleteDialog(false);
+    showToast('Image removed successfully!', 'success');
+  };
+
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 3000);
   };
 
   // Handle input changes
@@ -53,11 +99,40 @@ const MeetYourHostEditPage = () => {
   };
 
   // Confirm save action
-  const confirmSave = () => {
-    // Handle form submission
-    console.log({ hostData });
-    setShowSaveDialog(false);
-    // Here you would typically send the data to your backend
+  const confirmSave = async () => {
+    try {
+      // Handle image update with automatic cleanup
+      const imageResult = await updateImage(
+        hostData.image?.file || null, 
+        previousImageUrl, 
+        'about/meet-hosts',
+        supabase
+      );
+      
+      if (!imageResult.success && hostData.image?.file) {
+        showToast('Error uploading image: ' + imageResult.error, 'error');
+        return;
+      }
+
+      // Prepare data for database
+      const hostSectionData = {
+        title: hostData.title,
+        description: hostData.description,
+        image_url: imageResult.newImageUrl || (hostData.image?.isExisting ? hostData.image.url : null) || null
+      };
+
+      // Save using API client
+      await meetHostApi.update(hostSectionData);
+
+      // Update previous image URL
+      setPreviousImageUrl(hostSectionData.image_url);
+      
+      setShowSaveDialog(false);
+      showToast('Changes saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving data:', error);
+      showToast('Error saving data', 'error');
+    }
   };
 
   return (
@@ -79,31 +154,31 @@ const MeetYourHostEditPage = () => {
       
       <div className="bg-white rounded-2xl shadow-[0_4px_18px_rgba(0,0,0,0.05)] p-6 border border-[#0A3D2E15]">
         <form className="space-y-6" onSubmit={openSaveDialog}>
-          {/* Heading */}
+          {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Heading
+              Title
             </label>
             <input
               type="text"
-              value={hostData.heading}
-              onChange={(e) => handleInputChange('heading', e.target.value)}
+              value={hostData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0A3D2E] focus:border-transparent"
-              placeholder="Enter heading"
+              placeholder="Enter title"
             />
           </div>
           
-          {/* Subheading */}
+          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Subheading
+              Description
             </label>
-            <input
-              type="text"
-              value={hostData.subheading}
-              onChange={(e) => handleInputChange('subheading', e.target.value)}
+            <textarea
+              value={hostData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0A3D2E] focus:border-transparent"
-              placeholder="Enter subheading"
+              placeholder="Enter description"
             />
           </div>
           
@@ -116,16 +191,16 @@ const MeetYourHostEditPage = () => {
             {hostData.image ? (
               <div className="relative inline-block">
                 <img 
-                  src={hostData.image.preview} 
+                  src={hostData.image.preview || hostData.image.url} 
                   alt="Profile preview" 
                   className="w-32 h-32 object-cover rounded-lg"
                 />
                 <button
                   type="button"
-                  onClick={removeImage}
+                  onClick={openDeleteDialog}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                 >
-                  <X size={16} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             ) : (
@@ -159,6 +234,29 @@ const MeetYourHostEditPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDelete}
+        title="Delete Image"
+        message="Are you sure you want to remove this image? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
 
       {/* Save Confirmation Dialog */}
       <ConfirmationDialog

@@ -1,0 +1,40 @@
+// This is just a placeholder file to show how the centralized image service would be used
+// In actual Next.js components, you would import the supabase client and pass it to these functions
+
+console.log('Centralized Image Service Implementation Complete');
+console.log('=============================================');
+console.log('');
+console.log('The imageService.js file has been created with the following functions:');
+console.log('');
+console.log('1. updateImage(newFile, previousImageUrl, folderPath, supabaseClient)');
+console.log('   - Handles complete image update workflow with automatic cleanup');
+console.log('   - Uploads new image and deletes old one');
+console.log('   - Returns success status and new image URL');
+console.log('');
+console.log('2. deleteImageFromStorage(url, supabaseClient)');
+console.log('   - Deletes a single image from Supabase storage');
+console.log('   - Extracts filename from URL and removes it');
+console.log('');
+console.log('3. uploadImageToStorage(file, folderPath, supabaseClient)');
+console.log('   - Uploads an image file to Supabase storage');
+console.log('   - Places it in the specified folder path');
+console.log('   - Returns public URL of uploaded image');
+console.log('');
+console.log('4. getFileNameFromUrl(url)');
+console.log('   - Extracts the filename from a Supabase storage URL');
+console.log('   - Used internally by other functions');
+console.log('');
+console.log('Usage in admin panels:');
+console.log('// Import the functions');
+console.log("import { updateImage, deleteImageFromStorage } from '@/app/lib/imageService';");
+console.log("import { supabase } from '@/app/lib/supabaseClient';");
+console.log('');
+console.log('// Use in your save handler');
+console.log('const result = await updateImage(newFile, previousImageUrl, "about/meet-hosts", supabase);');
+console.log('if (result.success) {');
+console.log('  // Handle success');
+console.log('  const newImageUrl = result.newImageUrl;');
+console.log('} else {');
+console.log('  // Handle error');
+console.log('  console.error(result.error);');
+console.log('}');

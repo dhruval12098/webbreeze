@@ -1,8 +1,61 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from '@/app/lib/supabaseClient';
 
 const Page = () => {
+  const [ourStoryData, setOurStoryData] = useState(null);
+  const [meetHostsData, setMeetHostsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch Our Story data
+        const { data: ourStory, error: ourStoryError } = await supabase
+          .from('our_story_section')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+
+        if (ourStoryError) {
+          console.error('Error fetching our story data:', ourStoryError);
+        } else {
+          setOurStoryData(ourStory);
+        }
+
+        // Fetch Meet Hosts data
+        const { data: meetHosts, error: meetHostsError } = await supabase
+          .from('meet_hosts_section')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+
+        if (meetHostsError) {
+          console.error('Error fetching meet hosts data:', meetHostsError);
+        } else {
+          setMeetHostsData(meetHosts);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-2xl font-jakarta" style={{ color: "#173A00" }}>
+          Loading...
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main>
 
@@ -40,8 +93,9 @@ const Page = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80')",
+            backgroundImage: ourStoryData?.image_url 
+              ? `url('${ourStoryData.image_url}')`
+              : "url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80')"
           }}
         ></div>
 
@@ -53,18 +107,15 @@ const Page = () => {
             className="text-2xl sm:text-[32px] font-serif italic font-normal"
             style={{ color: "#FFFBE6" }}
           >
-            Our Story
+            {ourStoryData?.title || "Our Story"}
           </h3>
 
           <p 
             className="mt-3 sm:mt-4 max-w-[900px] text-sm sm:text-[16px] font-jakarta leading-relaxed"
             style={{ color: "#FFFBE6" }}
           >
-            Breeze & Grains began as a small family home surrounded by coconut trees,
-            rice fields, and quiet mornings filled with birdsong. <br /><br />
-            What started as a place for our friends and family to unwind slowly grew
-            into a homestay where travelers from all over India come to reconnect
-            with nature.
+            {ourStoryData?.description || 
+              "Breeze & Grains began as a small family home surrounded by coconut trees, rice fields, and quiet mornings filled with birdsong. What started as a place for our friends and family to unwind slowly grew into a homestay where travelers from all over India come to reconnect with nature."}
           </p>
         </div>
       </section>
@@ -78,16 +129,15 @@ const Page = () => {
             className="text-2xl sm:text-[32px] font-serif italic font-normal"
             style={{ color: "#173A00" }}
           >
-            Meet Your Hosts
+            {meetHostsData?.title || "Meet Your Hosts"}
           </h3>
 
           <p 
             className="mt-3 sm:mt-4 max-w-[420px] text-sm sm:text-[16px] font-jakarta leading-relaxed"
             style={{ color: "#173A00" }}
           >
-            We are a small family from Alappuzha who has lived here for generations.
-            Hosting guests is not a business for us — it's sharing a piece of our
-            home and our culture with you.
+            {meetHostsData?.description || 
+              "We are a small family from Alappuzha who has lived here for generations. Hosting guests is not a business for us — it's sharing a piece of our home and our culture with you."}
           </p>
         </div>
 
@@ -103,7 +153,9 @@ const Page = () => {
             <div 
               className="w-full h-full bg-cover bg-center rounded-3xl"
               style={{ 
-                backgroundImage: "url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80')",
+                backgroundImage: meetHostsData?.image_url 
+                  ? `url('${meetHostsData.image_url}')`
+                  : "url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80')",
                 backgroundColor: "#173A00"
               }}
             ></div>

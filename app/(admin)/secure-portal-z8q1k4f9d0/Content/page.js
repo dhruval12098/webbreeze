@@ -96,7 +96,7 @@ const HomeTab = () => (
 const RoomsTab = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <Card
-      title="Room Description"
+      title=" Description"
       description="Edit the main description for your room."
       editPath="/secure-portal-z8q1k4f9d0/Content/edit/rooms/room-description"
     />
@@ -105,6 +105,12 @@ const RoomsTab = () => (
       title="Room Details"
       description="Manage capacity, amenities, features, and pricing information."
       editPath="/secure-portal-z8q1k4f9d0/Content/edit/rooms/room-details"
+    />
+    
+    <Card
+      title="Room Amenities"
+      description="Manage room amenities and their icons."
+      editPath="/secure-portal-z8q1k4f9d0/Content/edit/rooms/amenities"
     />
   </div>
 );

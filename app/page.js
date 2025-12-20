@@ -8,29 +8,50 @@ import OverviewSection from "./components/home/OverviewSection";
 import NearbyPlace from "./components/home/NearbyPlace";
 import BoatHero from "./components/BoatHero";
 import Enquiry from "./components/common/Enquiry";
+import { supabase } from './lib/supabaseClient';
 
 const Hero = () => {
-  const slides = [
-    "https://images.unsplash.com/photo-1761839258075-585182da7521?w=1400&auto=format&fit=crop&q=70",
-    "https://images.unsplash.com/photo-1765127586047-f158d5bd6a33?w=1400&auto=format&fit=crop&q=70",
-    "https://images.unsplash.com/photo-1765451817006-4a9f9cb3afc4?w=1400&auto=format&fit=crop&q=70",
-  ];
-
+  const [heroData, setHeroData] = useState({
+    title: "Breeze & Grains",
+    subtitle: "Your peaceful Kerala retreat by the backwaters of Alappuzha",
+    image_urls: [
+      "https://images.unsplash.com/photo-1761839258075-585182da7521?w=1400&auto=format&fit=crop&q=70",
+      "https://images.unsplash.com/photo-1765127586047-f158d5bd6a33?w=1400&auto=format&fit=crop&q=70",
+      "https://images.unsplash.com/photo-1765451817006-4a9f9cb3afc4?w=1400&auto=format&fit=crop&q=70",
+    ]
+  });
+  
   const [index, setIndex] = useState(0);
+
+  // Fetch hero data from Supabase
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      const { data, error } = await supabase
+        .from('hero_section')
+        .select('*')
+        .limit(1);
+      
+      if (data && data.length > 0) {
+        setHeroData(data[0]);
+      }
+    };
+
+    fetchHeroData();
+  }, []);
 
   // SLIDER ANIMATION
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % slides.length);
+      setIndex((prev) => (prev + 1) % heroData.image_urls.length);
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroData.image_urls]);
 
   return (
     <section className="w-[98%] mx-auto rounded-3xl h-screen flex relative overflow-hidden mt-6">
       {/* BACKGROUND SLIDER */}
       <div className="absolute inset-0">
-        {slides.map((src, i) => (
+        {heroData.image_urls.map((src, i) => (
           <img
             key={i}
             src={src}
@@ -53,11 +74,11 @@ const Hero = () => {
           className="text-4xl md:text-5xl italic mt-1"
           style={{ fontFamily: "Playfair Display" }}
         >
-          Breeze & Grains
+          {heroData.title}
         </h1>
 
         <p className="text-sm font-sans mt-2 opacity-80">
-          Your peaceful Kerala retreat by the backwaters of Alappuzha
+          {heroData.subtitle}
         </p>
 
         {/* BUTTONS */}
@@ -79,7 +100,7 @@ const Hero = () => {
 
       {/* PREVIEW SLIDE INDICATORS */}
       <div className="hidden lg:flex absolute bottom-12 right-10 gap-3 items-center">
-        {slides.map((url, i) => (
+        {heroData.image_urls.map((url, i) => (
           <img
             key={i}
             src={url}

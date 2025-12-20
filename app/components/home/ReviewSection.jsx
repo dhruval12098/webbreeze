@@ -2,62 +2,78 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-
-// Static Reviews Data
-const reviewsData = [
-  {
-    text: "Such a peaceful and beautiful place. Waking up to the backwater view was the best part of my trip. The rooms were clean and the hosts were very kind. I would love to come back again.",
-    userName: "User Name here",
-    rating: 4,
-  },
-  {
-    text: "An absolutely stunning property with incredible attention to detail. The staff went above and beyond to make our stay memorable.",
-    userName: "Sarah Johnson",
-    rating: 5,
-  },
-  {
-    text: "Perfect getaway destination. The ambiance was serene and the amenities exceeded our expectations. Highly recommend!",
-    userName: "Michael Chen",
-    rating: 4,
-  },
-];
+import { guestReviewsApi } from "@/app/lib/apiClient";
 
 const ReviewSection = () => {
   const [currentReview, setCurrentReview] = useState(0);
   const [revealedChars, setRevealedChars] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [averageRating, setAverageRating] = useState(0);
 
-  const reviews = useMemo(() => reviewsData, []);
+  // Fetch reviews from the database
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        const response = await guestReviewsApi.getAll({ limit: 10 });
+        
+        if (response.success) {
+          const fetchedReviews = response.data || [];
+          setReviews(fetchedReviews);
+          
+          // Calculate average rating
+          if (fetchedReviews.length > 0) {
+            const totalRating = fetchedReviews.reduce((sum, review) => sum + review.rating, 0);
+            const avg = totalRating / fetchedReviews.length;
+            setAverageRating(avg.toFixed(1));
+          }
+        } else {
+          setError(response.error || "Failed to fetch reviews");
+        }
+      } catch (err) {
+        setError(err.message || "An error occurred while fetching reviews");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, []);
 
   useEffect(() => {
-    setRevealedChars(0);
-    const fullText = reviews[currentReview].text;
+    if (reviews.length > 0) {
+      setRevealedChars(0);
+      const fullText = reviews[currentReview]?.review_text || "";
 
-    let charIndex = 0;
-    let wordPause = 0;
+      let charIndex = 0;
+      let wordPause = 0;
 
-    const interval = setInterval(() => {
-      const currentChar = fullText[charIndex];
-      if (wordPause > 0) {
-        wordPause--;
-        return;
-      }
+      const interval = setInterval(() => {
+        const currentChar = fullText[charIndex];
+        if (wordPause > 0) {
+          wordPause--;
+          return;
+        }
 
-      charIndex++;
-      setRevealedChars(charIndex);
+        charIndex++;
+        setRevealedChars(charIndex);
 
-      if (currentChar === "." || currentChar === "!" || currentChar === "?") {
-        wordPause = 8;
-      } else if (currentChar === "," || currentChar === ";") {
-        wordPause = 4;
-      }
+        if (currentChar === "." || currentChar === "!" || currentChar === "?") {
+          wordPause = 8;
+        } else if (currentChar === "," || currentChar === ";") {
+          wordPause = 4;
+        }
 
-      if (charIndex >= fullText.length) {
-        clearInterval(interval);
-      }
-    }, 25);
+        if (charIndex >= fullText.length) {
+          clearInterval(interval);
+        }
+      }, 25);
 
-    return () => clearInterval(interval);
-  }, [currentReview]);
+      return () => clearInterval(interval);
+    }
+  }, [currentReview, reviews]);
 
   const nextReview = () => {
     setCurrentReview((prev) => (prev + 1) % reviews.length);
@@ -66,6 +82,45 @@ const ReviewSection = () => {
   const prevReview = () => {
     setCurrentReview((prev) => (prev - 1 + reviews.length) % reviews.length);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+        <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
+          <div className="text-center py-12">
+            <p>Loading reviews...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+        <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
+          <div className="text-center py-12">
+            <p>Error loading reviews: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state
+  if (reviews.length === 0) {
+    return (
+      <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+        <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
+          <div className="text-center py-12">
+            <p>No reviews available yet.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
@@ -88,7 +143,7 @@ const ReviewSection = () => {
               className="bg-white border border-[#122D00] border-l-0 px-4 py-2 rounded-r-md text-sm font-medium"
               style={{ color: "#594B00" }}
             >
-              4.5
+              {averageRating}
             </div>
           </div>
         </div>
@@ -100,6 +155,7 @@ const ReviewSection = () => {
           <button
             onClick={prevReview}
             className="flex-shrink-0 w-9 h-9 md:w-12 md:h-12 bg-[#122D00] rounded-full flex items-center justify-center hover:bg-[#122D00]/90 transition-colors"
+            disabled={reviews.length <= 1}
           >
             <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </button>
@@ -112,27 +168,35 @@ const ReviewSection = () => {
             >
               "
               <span style={{ color: "#122D00" }}>
-                {reviews[currentReview].text.slice(0, revealedChars)}
+                {reviews[currentReview]?.review_text?.slice(0, revealedChars) || ""}
               </span>
               <span style={{ color: "#d4d4d4" }}>
-                {reviews[currentReview].text.slice(revealedChars)}
+                {reviews[currentReview]?.review_text?.slice(revealedChars) || ""}
               </span>
               "
             </p>
 
             {/* User Card */}
             <div className="inline-flex items-center gap-3 bg-neutral-200 rounded-full px-5 py-2">
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-neutral-400 rounded-full flex-shrink-0" />
+              {reviews[currentReview]?.image_url ? (
+                <img 
+                  src={reviews[currentReview].image_url} 
+                  alt={reviews[currentReview].reviewer_name} 
+                  className="w-9 h-9 md:w-10 md:h-10 bg-neutral-400 rounded-full flex-shrink-0 object-cover"
+                />
+              ) : (
+                <div className="w-9 h-9 md:w-10 md:h-10 bg-neutral-400 rounded-full flex-shrink-0" />
+              )}
               <div className="text-left">
                 <p className="text-xs md:text-sm font-medium text-neutral-800">
-                  {reviews[currentReview].userName}
+                  {reviews[currentReview]?.reviewer_name || "Anonymous"}
                 </p>
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       className={`w-3 h-3 ${
-                        i < reviews[currentReview].rating
+                        i < (reviews[currentReview]?.rating || 0)
                           ? "fill-yellow-400 text-yellow-400"
                           : "fill-neutral-300 text-neutral-300"
                       }`}
@@ -147,6 +211,7 @@ const ReviewSection = () => {
           <button
             onClick={nextReview}
             className="flex-shrink-0 w-9 h-9 md:w-12 md:h-12 bg-[#122D00] rounded-full flex items-center justify-center hover:bg-[#122D00]/90 transition-colors"
+            disabled={reviews.length <= 1}
           >
             <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-white" />
           </button>
@@ -161,6 +226,7 @@ const ReviewSection = () => {
               className={`w-2 h-2 rounded-full transition-colors ${
                 index === currentReview ? "bg-[#122D00]" : "bg-neutral-300"
               }`}
+              aria-label={`Go to review ${index + 1}`}
             />
           ))}
         </div>

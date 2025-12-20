@@ -2,25 +2,31 @@
   "name": "webreeze",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "init-gallery": "node init-gallery-table-simple.js"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
     "@react-three/postprocessing": "^3.0.4",
     "@studio-freight/lenis": "^1.0.42",
+    "@supabase/supabase-js": "^2.87.1",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.25",
     "gsap": "^3.13.0",
     "lucide-react": "^0.556.0",
     "next": "^16.0.10",
+    "node-fetch": "^3.3.2",
     "postprocessing": "^6.38.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-icons": "^5.5.0",
+    "react-toastify": "^11.0.5",
     "swiper": "^12.0.3",
     "three": "^0.181.2"
   },

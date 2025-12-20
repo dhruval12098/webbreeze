@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/app/lib/supabaseClient';
 
 const NearbyPlace = () => {
-  const places = [
+  const [places, setPlaces] = useState([
     {
       id: 1,
       title: "Alappuzha Backwaters",
@@ -26,7 +27,33 @@ const NearbyPlace = () => {
       shape: "rectangle",
       image: "/image/image7.jpg"
     }
-  ];
+  ]);
+
+  // Fetch nearby places data from Supabase
+  useEffect(() => {
+    const fetchNearbyPlaces = async () => {
+      const { data, error } = await supabase
+        .from('nearby_places')
+        .select('*')
+        .order('id');
+
+      if (data && data.length > 0) {
+        // Transform data to match component structure
+        const transformedData = data.map((place, index) => ({
+          id: place.id,
+          title: place.title || `Place ${place.id}`,
+          description: place.description || "No description available",
+          imagePosition: index % 2 === 0 ? "left" : "right",
+          shape: index === 1 ? "square" : "rectangle",
+          // Only use the image_url if it exists, otherwise no fallback image
+          image: place.image_url || null
+        }));
+        setPlaces(transformedData);
+      }
+    };
+
+    fetchNearbyPlaces();
+  }, []);
 
   return (
     <div className="w-[98%] mx-auto rounded-3xl min-h-screen relative overflow-hidden px-4 md:px-8 lg:px-16 py-12" style={{ backgroundColor: "#FFFBE6" }}>
@@ -64,11 +91,18 @@ const NearbyPlace = () => {
                 <div className="absolute inset-0 bg-gray-200" style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
                 }}></div>
-                {/* Actual image from public directory */}
-                <div 
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${place.image})` }}
-                ></div>
+                {/* Actual image from Supabase storage - only show if image exists */}
+                {place.image ? (
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${place.image})` }}
+                  ></div>
+                ) : (
+                  // Show a placeholder when no image is available
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                    <span className="text-gray-400">No image available</span>
+                  </div>
+                )}
               </div>
             </div>
 

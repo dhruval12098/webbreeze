@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Trash2 } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
+import { supabase } from '@/app/lib/supabaseClient';
+import { updateImage, deleteImageFromStorage } from '@/app/lib/imageService';
+import { heroSectionApi } from '@/app/lib/apiClient';
 
 const HeroSectionEditPage = () => {
   const [images, setImages] = useState([]);
@@ -11,6 +14,43 @@ const HeroSectionEditPage = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
+  const [existingImageData, setExistingImageData] = useState([]);
+  const [previousImageUrls, setPreviousImageUrls] = useState([]);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+
+  // Load existing data from API
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      try {
+        const response = await heroSectionApi.get();
+        const { data } = response;
+
+        if (data) {
+          const heroData = data;
+          setTitle(heroData.title || "");
+          setSubtitle(heroData.subtitle || "");
+          
+          // Store previous image URLs for cleanup
+          if (heroData.image_urls) {
+            setPreviousImageUrls([...heroData.image_urls]);
+            
+            // Load existing images
+            const imageObjects = heroData.image_urls.map((url, index) => ({
+              id: `existing-${index}`,
+              url: url,
+              isExisting: true
+            }));
+            setExistingImageData(imageObjects);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching hero section data:', error);
+        showToast('Error loading hero section data', 'error');
+      }
+    };
+
+    fetchHeroData();
+  }, []);
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -26,7 +66,7 @@ const HeroSectionEditPage = () => {
             preview: e.target.result
           });
           
-          if (newImages.length === Math.min(files.length, 3 - images.length)) {
+          if (newImages.length === Math.min(files.length, 3 - (existingImageData.length + images.length))) {
             setImages(prev => [...prev, ...newImages]);
           }
         };
@@ -40,8 +80,24 @@ const HeroSectionEditPage = () => {
     setShowDeleteDialog(true);
   };
 
-  const confirmDelete = () => {
-    setImages(images.filter(image => image.id !== imageToDelete));
+  const confirmDelete = async () => {
+    // Check if it's an existing image or newly uploaded
+    if (imageToDelete && imageToDelete.startsWith && imageToDelete.startsWith('existing-')) {
+      const imageToRemove = existingImageData.find(img => img.id === imageToDelete);
+      if (imageToRemove) {
+        // Delete from storage immediately using centralized service
+        const result = await deleteImageFromStorage(imageToRemove.url, supabase);
+        if (result && result.success) {
+          console.log('Image deleted from storage successfully');
+        } else {
+          console.error('Failed to delete image from storage:', result ? result.error : 'Unknown error');
+        }
+        // Remove from previousImageUrls tracking
+        setPreviousImageUrls(prev => prev.filter(url => url !== imageToRemove.url));
+      }      setExistingImageData(existingImageData.filter(image => image.id !== imageToDelete));
+    } else {
+      setImages(images.filter(image => image.id !== imageToDelete));
+    }
     setShowDeleteDialog(false);
     setImageToDelete(null);
   };
@@ -51,16 +107,97 @@ const HeroSectionEditPage = () => {
     setShowSaveDialog(true);
   };
 
-  const confirmSave = () => {
-    // Handle form submission
-    console.log({ title, subtitle, images });
-    setShowSaveDialog(false);
-    // Here you would typically send the data to your backend
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 3000);
   };
 
-  const removeImage = (id) => {
-    setImages(images.filter(image => image.id !== id));
+  const confirmSave = async () => {
+    try {
+      // Upload new images to Supabase storage
+      const imageUrls = [];
+      
+      // Add existing images that weren't deleted
+      existingImageData.forEach(img => imageUrls.push(img.url));
+      
+      // Upload new images
+      const newImageUrls = [];
+      for (const image of images) {
+        if (image.file) {
+          // Use centralized upload service
+          const uploadResult = await updateImage(image.file, null, 'hero', supabase);
+          
+          if (uploadResult.success) {
+            imageUrls.push(uploadResult.newImageUrl);
+            newImageUrls.push(uploadResult.newImageUrl);
+          } else {
+            console.error('Upload error:', uploadResult.error);
+            showToast('Error uploading images', 'error');
+            return;
+          }
+        }
+      }
+
+      // Save to database
+      const heroData = {
+        title,
+        subtitle,
+        image_urls: imageUrls
+      };
+
+      // Save using API client
+      await heroSectionApi.update(heroData);
+
+      // Clean up ALL old images from storage that are no longer used
+      // This includes both previous images and any images that were replaced
+      for (const url of previousImageUrls) {
+        // Only delete if it's not in the current image set
+        if (!imageUrls.includes(url)) {
+          const result = await deleteImageFromStorage(url, supabase);
+          if (result && result.success) {
+            console.log('Old image deleted from storage successfully:', url);
+          } else {
+            console.error('Failed to delete old image from storage:', url, result ? result.error : 'Unknown error');
+          }
+        }
+      }      // Update previousImageUrls to current ones for next update
+      setPreviousImageUrls([...imageUrls]);
+      
+      // Clear the new images state after saving
+      setImages([]);
+
+      setShowSaveDialog(false);
+      
+      // Show success toast
+      showToast('Hero section updated successfully!', 'success');
+    } catch (error) {
+      console.error('Save error:', error);
+      showToast('Error saving changes', 'error');
+    }
   };
+
+  const removeImage = async (id) => {
+    if (id && id.startsWith && id.startsWith('existing-')) {
+      const imageToRemove = existingImageData.find(img => img.id === id);
+      if (imageToRemove) {
+        // Delete from storage immediately using centralized service
+        const result = await deleteImageFromStorage(imageToRemove.url, supabase);
+        if (result && result.success) {
+          console.log('Image deleted from storage successfully');
+        } else {
+          console.error('Failed to delete image from storage:', result ? result.error : 'Unknown error');
+        }
+        // Remove from previousImageUrls tracking
+        setPreviousImageUrls(prev => prev.filter(url => url !== imageToRemove.url));
+      }
+      setExistingImageData(existingImageData.filter(image => image.id !== id));
+    } else {
+      setImages(images.filter(image => image.id !== id));
+    }
+  };  // Combine existing and new images for display
+  const allImages = [...existingImageData, ...images];
 
   return (
     <div className="w-full min-h-screen bg-white px-6 py-8">
@@ -88,12 +225,12 @@ const HeroSectionEditPage = () => {
             </label>
             
             {/* Image Preview Area */}
-            {images.length > 0 && (
+            {allImages.length > 0 && (
               <div className="grid grid-cols-3 gap-4 mb-4">
-                {images.map((image) => (
+                {allImages.map((image) => (
                   <div key={image.id} className="relative">
                     <img 
-                      src={image.preview} 
+                      src={image.preview || image.url} 
                       alt="Preview" 
                       className="w-full h-32 object-cover rounded-lg"
                     />
@@ -102,7 +239,7 @@ const HeroSectionEditPage = () => {
                       onClick={() => openDeleteDialog(image.id)}
                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                     >
-                      <X size={16} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 ))}
@@ -110,7 +247,7 @@ const HeroSectionEditPage = () => {
             )}
             
             {/* Upload Button */}
-            {images.length < 3 && (
+            {allImages.length < 3 && (
               <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
                 <input 
                   type="file" 
@@ -119,7 +256,7 @@ const HeroSectionEditPage = () => {
                   onChange={handleImageUpload}
                   className="hidden" 
                   id="image-upload" 
-                  disabled={images.length >= 3}
+                  disabled={allImages.length >= 3}
                 />
                 <label 
                   htmlFor="image-upload" 
@@ -127,7 +264,7 @@ const HeroSectionEditPage = () => {
                 >
                   <p>Click to upload images</p>
                   <p className="text-sm text-gray-500 mt-2">
-                    {images.length}/3 images uploaded
+                    {allImages.length}/3 images uploaded
                   </p>
                 </label>
               </div>
@@ -173,6 +310,17 @@ const HeroSectionEditPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog

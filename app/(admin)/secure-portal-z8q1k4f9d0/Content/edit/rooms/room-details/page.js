@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Plus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Plus, Trash2 } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
+import { supabase } from '@/app/lib/supabaseClient';
+import { updateImage, deleteImageFromStorage } from '@/app/lib/imageService';
+import { roomApi } from '@/app/lib/apiClient';
+
+// Debug the Supabase client import
+console.log('Supabase client imported:', supabase);
+if (supabase) {
+  console.log('Supabase client has storage property:', !!supabase.storage);
+}
 
 const RoomDetailsEditPage = () => {
   const [activeTab, setActiveTab] = useState("details"); // Default to details tab
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' }); // Add toast state for notifications
   
   // Room Details State
   const [roomDetails, setRoomDetails] = useState({
@@ -14,50 +26,157 @@ const RoomDetailsEditPage = () => {
     label: "",
     price: "",
     description: "",
-    images: []
+    images: Array(5).fill(null) // Changed to fixed array of 5 images
   });
   
-  // Amenities State
-  const [amenitiesList, setAmenitiesList] = useState([]);
-  const [newAmenity, setNewAmenity] = useState({
-    icon: null,
-    title: "",
-    description: ""
-  });
+  const [previousImageUrls, setPreviousImageUrls] = useState(Array(5).fill(null));
 
-  // Handle image upload for room details
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const newImages = [];
+  // Load existing data from API
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      try {
+        const response = await roomApi.getAll();
+        const { data } = response;
 
-    files.forEach(file => {
-      if (roomDetails.images.length + newImages.length < 5) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          newImages.push({
-            id: Date.now() + Math.random(),
-            file: file,
-            preview: e.target.result
+        if (data && data.length > 0) {
+          const room = data[0];
+          setRoomDetails({
+            title: room.title || "",
+            label: room.label || "",
+            price: room.price || "",
+            description: room.description || "",
+            images: [
+              room.image1_url ? { url: room.image1_url, isExisting: true } : null,
+              room.image2_url ? { url: room.image2_url, isExisting: true } : null,
+              room.image3_url ? { url: room.image3_url, isExisting: true } : null,
+              room.image4_url ? { url: room.image4_url, isExisting: true } : null,
+              room.image5_url ? { url: room.image5_url, isExisting: true } : null
+            ]
           });
           
-          if (newImages.length === Math.min(files.length, 5 - roomDetails.images.length)) {
-            setRoomDetails(prev => ({
-              ...prev,
-              images: [...prev.images, ...newImages]
-            }));
-          }
-        };
-        reader.readAsDataURL(file);
+          // Store previous image URLs for cleanup
+          setPreviousImageUrls([
+            room.image1_url || null,
+            room.image2_url || null,
+            room.image3_url || null,
+            room.image4_url || null,
+            room.image5_url || null
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching room data:', error);
+        showToast('Error loading room data', 'error');
       }
-    });
+    };
+
+    fetchRoomData();
+  }, []);
+
+  // Handle image upload for room details (specific to each slot)
+  const handleImageUpload = (e, index) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newImages = [...roomDetails.images];
+        newImages[index] = {
+          file: file,
+          preview: e.target.result
+        };
+        setRoomDetails(prev => ({
+          ...prev,
+          images: newImages
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  // Remove image from room details
-  const removeImage = (id) => {
-    setRoomDetails(prev => ({
-      ...prev,
-      images: prev.images.filter(image => image.id !== id)
-    }));
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' });
+    }, 3000);
+  };
+
+  // Open delete confirmation dialog
+  const openDeleteDialog = (index) => {
+    setImageToDelete(index);
+    setShowDeleteDialog(true);
+  };
+
+  // Confirm image deletion - FIXED to use previousImageUrls and delete immediately
+  const confirmDelete = async () => {
+    if (imageToDelete !== null) {
+      try {
+        // CRITICAL FIX: Use previousImageUrls instead of current image URL
+        const urlToDelete = previousImageUrls[imageToDelete];
+        
+        console.log('Attempting to delete image at index:', imageToDelete);
+        console.log('URL to delete from previousImageUrls:', urlToDelete);
+        
+        // If image exists in storage, delete it immediately
+        if (urlToDelete) {
+          console.log('Deleting image from storage:', urlToDelete);
+          
+          const deleteResult = await deleteImageFromStorage(urlToDelete, supabase);
+          console.log('Delete result:', deleteResult);
+          
+          if (!deleteResult.success) {
+            console.error('Failed to delete image from storage:', deleteResult.error);
+            showToast('Failed to delete image from storage: ' + deleteResult.error, 'error');
+            // Continue anyway to update UI and DB
+          }
+          
+          // Also update the database to remove the URL reference immediately
+          try {
+            // Get the current room data
+            const response = await roomApi.getAll();
+            const { data: existingData } = response;
+            
+            if (existingData && existingData.length > 0) {
+              // Prepare update data - set the specific image field to null
+              const updateData = {};
+              const imageFieldNames = ['image1_url', 'image2_url', 'image3_url', 'image4_url', 'image5_url'];
+              updateData[imageFieldNames[imageToDelete]] = null;
+              
+              // Update the database
+              await roomApi.update(existingData[0].id, updateData);
+              console.log('Database updated to remove image reference');
+            }
+          } catch (dbError) {
+            console.error('Error updating database:', dbError);
+            showToast('Image deleted from storage but failed to update database: ' + dbError.message, 'error');
+            // Don't return here - we still want to update the UI even if DB update fails
+          }
+        } else {
+          console.log('No URL found in previousImageUrls, skipping storage deletion');
+        }
+
+        // Remove from local state
+        const newImages = [...roomDetails.images];
+        newImages[imageToDelete] = null;
+        setRoomDetails(prev => ({
+          ...prev,
+          images: newImages
+        }));
+        
+        // Update previousImageUrls tracking - CRITICAL for future deletes
+        const newPreviousUrls = [...previousImageUrls];
+        newPreviousUrls[imageToDelete] = null;
+        setPreviousImageUrls(newPreviousUrls);
+        
+        setShowDeleteDialog(false);
+        setImageToDelete(null);
+        showToast('Image deleted successfully!', 'success');
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        showToast('Error deleting image: ' + error.message, 'error');
+        setShowDeleteDialog(false);
+        setImageToDelete(null);
+      }
+    }
   };
 
   // Handle room details input changes
@@ -77,77 +196,74 @@ const RoomDetailsEditPage = () => {
     }
   };
 
-  // Handle new amenity input changes
-  const handleNewAmenityChange = (field, value) => {
-    setNewAmenity(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Handle icon upload for new amenity
-  const handleIconUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setNewAmenity(prev => ({
-          ...prev,
-          icon: {
-            file: file,
-            preview: e.target.result
-          }
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Remove icon from new amenity
-  const removeIcon = () => {
-    setNewAmenity(prev => ({
-      ...prev,
-      icon: null
-    }));
-  };
-
-  // Add new amenity to the list
-  const addAmenity = () => {
-    if (newAmenity.title && newAmenity.description) {
-      setAmenitiesList(prev => [
-        ...prev,
-        {
-          id: Date.now() + Math.random(),
-          ...newAmenity
-        }
-      ]);
-      
-      // Reset the new amenity form
-      setNewAmenity({
-        icon: null,
-        title: "",
-        description: ""
-      });
-    }
-  };
-
-  // Remove amenity from the list
-  const removeAmenity = (id) => {
-    setAmenitiesList(prev => prev.filter(amenity => amenity.id !== id));
-  };
-
   // Open save confirmation dialog
   const openSaveDialog = (e) => {
     e.preventDefault();
     setShowSaveDialog(true);
   };
 
-  // Confirm save action
-  const confirmSave = () => {
-    // Handle form submission
-    console.log({ roomDetails, amenitiesList });
-    setShowSaveDialog(false);
-    // Here you would typically send the data to your backend
+  // Confirm save action - Enhanced version with proper image handling
+  const confirmSave = async () => {
+    try {
+      // Handle image updates with automatic cleanup for each image slot
+      const imageUrls = [];
+      
+      for (let i = 0; i < 5; i++) {
+        const image = roomDetails.images[i];
+        const previousUrl = previousImageUrls[i];
+        
+        // Use updateImage function which handles both deletion and upload
+        const imageResult = await updateImage(
+          image?.file || null, 
+          previousUrl, 
+          'rooms',
+          supabase
+        );
+        
+        if (!imageResult.success && image?.file) {
+          console.error('Error processing image:', imageResult.error);
+          showToast('Error processing image: ' + imageResult.error, 'error');
+          continue;
+        }
+        
+        // Set the new image URL or keep existing one or set to null
+        imageUrls[i] = imageResult.newImageUrl || (image?.isExisting ? image.url : null) || null;
+      }
+      
+      // Prepare data for database
+      const roomData = {
+        title: roomDetails.title,
+        label: roomDetails.label,
+        price: roomDetails.price,
+        description: roomDetails.description,
+        image1_url: imageUrls[0],
+        image2_url: imageUrls[1],
+        image3_url: imageUrls[2],
+        image4_url: imageUrls[3],
+        image5_url: imageUrls[4]
+      };
+
+      // Check if record exists
+      const response = await roomApi.getAll();
+      const { data: existingData } = response;
+
+      if (existingData && existingData.length > 0) {
+        // Update existing record
+        await roomApi.update(existingData[0].id, roomData);
+      } else {
+        // Insert new record
+        await roomApi.create(roomData);
+      }
+
+      // Update previous image URLs
+      setPreviousImageUrls([...imageUrls]);
+      
+      setShowSaveDialog(false);
+      showToast('Room details saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving data:', error);
+      showToast('Error saving data', 'error');
+    }
   };
 
   return (
@@ -254,217 +370,101 @@ const RoomDetailsEditPage = () => {
                 ></textarea>
               </div>
               
-              {/* Image Upload Section */}
+              {/* Image Upload Section - 5 Separate Uploaders */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Images (Max 5)
+                  Room Images (5 slots)
                 </label>
                 
-                {/* Image Preview Area */}
-                {roomDetails.images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    {roomDetails.images.map((image) => (
-                      <div key={image.id} className="relative">
-                        <img 
-                          src={image.preview} 
-                          alt="Preview" 
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(image.id)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Upload Button */}
-                {roomDetails.images.length < 5 && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept="image/*" 
-                      onChange={handleImageUpload}
-                      className="hidden" 
-                      id="image-upload" 
-                      disabled={roomDetails.images.length >= 5}
-                    />
-                    <label 
-                      htmlFor="image-upload" 
-                      className="cursor-pointer text-gray-600 hover:text-gray-800"
-                    >
-                      <p>Click to upload images</p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        {roomDetails.images.length}/5 images uploaded
-                      </p>
-                    </label>
-                  </div>
-                )}
+                <div className="grid grid-cols-5 gap-4">
+                  {roomDetails.images.map((image, index) => (
+                    <div key={index} className="relative">
+                      {image ? (
+                        <div className="relative">
+                          <img 
+                            src={image.preview || image.url} 
+                            alt={`Room image ${index + 1}`} 
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => openDeleteDialog(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center h-32 flex flex-col items-center justify-center">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => handleImageUpload(e, index)}
+                            className="hidden" 
+                            id={`image-upload-${index}`}
+                          />
+                          <label 
+                            htmlFor={`image-upload-${index}`} 
+                            className="cursor-pointer text-gray-600 hover:text-gray-800 text-xs"
+                          >
+                            <Plus size={16} className="mx-auto" />
+                            <span className="mt-1">Add Image</span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
           
-          {/* Amenities Tab Content */}
+          {/* Amenities Tab Content - Updated to link to the new page */}
           {activeTab === "amenities" && (
-            <div className="space-y-6">
-              {/* Create Amenity Section */}
-              <div className="border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-[#0A3D2E] mb-4">
-                  Create New Amenity
-                </h3>
-                
-                <div className="space-y-4">
-                  {/* Icon Upload */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Icon
-                    </label>
-                    
-                    {newAmenity.icon ? (
-                      <div className="relative inline-block">
-                        <img 
-                          src={newAmenity.icon.preview} 
-                          alt="Icon preview" 
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={removeIcon}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handleIconUpload}
-                          className="hidden" 
-                          id="icon-upload"
-                        />
-                        <label 
-                          htmlFor="icon-upload" 
-                          className="cursor-pointer text-gray-600 hover:text-gray-800"
-                        >
-                          <p>Click to upload icon</p>
-                          <p className="text-sm text-gray-500 mt-2">
-                            PNG, JPG up to 5MB
-                          </p>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      value={newAmenity.title}
-                      onChange={(e) => handleNewAmenityChange('title', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0A3D2E] focus:border-transparent"
-                      placeholder="Enter amenity title"
-                    />
-                  </div>
-                  
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      value={newAmenity.description}
-                      onChange={(e) => handleNewAmenityChange('description', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0A3D2E] focus:border-transparent"
-                      placeholder="Enter amenity description"
-                      rows={3}
-                    ></textarea>
-                  </div>
-                  
-                  {/* Add Button */}
-                  <button
-                    type="button"
-                    onClick={addAmenity}
-                    className="flex items-center gap-2 bg-[#0A3D2E] text-white px-4 py-2 rounded-xl hover:bg-[#082f24] transition"
-                  >
-                    <Plus size={16} />
-                    Add Amenity
-                  </button>
-                </div>
-              </div>
-              
-              {/* Amenities List */}
-              {amenitiesList.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-[#0A3D2E] mb-4">
-                    Added Amenities
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {amenitiesList.map((amenity) => (
-                      <div 
-                        key={amenity.id} 
-                        className="bg-white rounded-2xl shadow-[0_4px_18px_rgba(0,0,0,0.05)] p-6 border border-[#0A3D2E15] flex justify-between items-start"
-                      >
-                        <div className="flex gap-4">
-                          {/* Icon */}
-                          {amenity.icon ? (
-                            <img 
-                              src={amenity.icon.preview} 
-                              alt="Amenity icon" 
-                              className="w-12 h-12 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="bg-gray-100 rounded-lg w-12 h-12 flex items-center justify-center">
-                              <span className="text-gray-400">Icon</span>
-                            </div>
-                          )}
-                          
-                          <div>
-                            <h4 className="text-lg font-semibold text-[#0A3D2E]">
-                              {amenity.title}
-                            </h4>
-                            <p className="text-gray-600 mt-1">
-                              {amenity.description}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <button
-                          type="button"
-                          onClick={() => removeAmenity(amenity.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="space-y-6 text-center py-10">
+              <h3 className="text-xl font-semibold text-[#0A3D2E]">
+                Manage Room Amenities
+              </h3>
+              <p className="text-gray-600">
+                Amenities are now managed on a separate page for better organization.
+              </p>
+              <a 
+                href="/secure-portal-z8q1k4f9d0/Content/edit/rooms/amenities" 
+                className="inline-block bg-[#0A3D2E] text-white px-6 py-2 rounded-xl hover:bg-[#082f24] transition"
+              >
+                Go to Amenities Page
+              </a>
             </div>
           )}
           
           {/* Submit Button */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="bg-[#0A3D2E] text-white px-6 py-2 rounded-xl hover:bg-[#082f24] transition"
-            >
-              Save Changes
-            </button>
-          </div>
+          {activeTab === "details" && (
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="bg-[#0A3D2E] text-white px-6 py-2 rounded-xl hover:bg-[#082f24] transition"
+              >
+                Save Changes
+              </button>
+            </div>
+          )}
         </form>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setImageToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Image"
+        message="Are you sure you want to remove this image? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
 
       {/* Save Confirmation Dialog */}
       <ConfirmationDialog
@@ -477,6 +477,17 @@ const RoomDetailsEditPage = () => {
         cancelText="Cancel"
         type="info"
       />
+      
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 };

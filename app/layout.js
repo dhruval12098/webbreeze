@@ -3,6 +3,8 @@ import "./globals.css";
 import SmoothScroll from "./components/SmoothScroll";
 import ConditionalNavbar from "./components/common/ConditionalNavbar";
 import ConditionalFooter from "./components/common/ConditionalFooter";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +31,7 @@ export default function RootLayout({ children }) {
           <ConditionalNavbar />
           {children}
           <ConditionalFooter />
+          <ToastContainer position="top-right" autoClose={5000} />
         </SmoothScroll>
       </body>
     </html>
