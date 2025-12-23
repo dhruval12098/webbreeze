@@ -1,31 +1,56 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { User2, Mail, Phone, Eye } from "lucide-react";
 
 const EnquiriesPage = () => {
-  const enquiries = [
-    {
-      name: "Riya Sharma",
-      email: "riya@gmail.com",
-      phone: "+91 9876543210",
-      message: "Need details about Deluxe Room availability.",
-      date: "Dec 11, 2025",
-    },
-    {
-      name: "Karan Patel",
-      email: "karan@gmail.com",
-      phone: "+91 9123456780",
-      message: "Is early check-in possible?",
-      date: "Dec 10, 2025",
-    },
-    {
-      name: "Mehul Jain",
-      email: "mehul@gmail.com",
-      phone: "+91 8899776655",
-      message: "Do you offer any corporate discounts?",
-      date: "Dec 08, 2025",
-    },
-  ];
+  const [enquiries, setEnquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEnquiries = async () => {
+      try {
+        const response = await fetch('/api/enquiries');
+        const result = await response.json();
+        
+        // Check if the response is an array before mapping
+        if (Array.isArray(result)) {
+          // Format the data to match the expected structure
+          const formattedData = result.map(item => ({
+            id: item.id,
+            name: item.name,
+            email: item.email,
+            phone: item.phone || 'N/A',
+            message: item.message,
+            numberOfGuests: item.number_of_guests || 'N/A',
+            date: new Date(item.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })
+          }));
+          
+          setEnquiries(formattedData);
+        } else {
+          console.error('Error: Expected array but got:', result);
+          setEnquiries([]); // Set to empty array if response is not an array
+        }
+      } catch (error) {
+        console.error('Error fetching enquiries:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchEnquiries();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-white flex items-center justify-center">
+        <div className="text-2xl font-semibold text-[#0A3D2E]">Loading enquiries...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -43,6 +68,7 @@ const EnquiriesPage = () => {
               <th className="py-3 px-3 font-medium">Name</th>
               <th className="py-3 px-3 font-medium">Email</th>
               <th className="py-3 px-3 font-medium">Phone</th>
+              <th className="py-3 px-3 font-medium">Number of Guests</th>
               <th className="py-3 px-3 font-medium">Message</th>
               <th className="py-3 px-3 font-medium">Date</th>
               <th className="py-3 px-3 font-medium text-right">Actions</th>
@@ -50,14 +76,15 @@ const EnquiriesPage = () => {
           </thead>
 
           <tbody className="text-[#0A3D2E]">
-            {enquiries.map((item, index) => (
+            {enquiries.map((item) => (
               <tr
-                key={index}
+                key={item.id}
                 className="border-b border-[#E5E7EB] hover:bg-[#F8FAFB] transition"
               >
                 <td className="py-4 px-3 font-medium">{item.name}</td>
                 <td className="px-3">{item.email}</td>
                 <td className="px-3">{item.phone}</td>
+                <td className="px-3">{item.numberOfGuests}</td>
                 <td className="px-3 max-w-xs truncate">{item.message}</td>
                 <td className="px-3">{item.date}</td>
 
