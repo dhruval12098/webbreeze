@@ -1,12 +1,73 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const Calendar = ({ selectedDate, onDateSelect }) => {
+const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
-
-  // Example booked date
-  const bookedDates = ["2025-12-28"];
+  const [bookedDates, setBookedDates] = useState([]);
+  
+  // Fetch booked dates for the current room
+  useEffect(() => {
+    const fetchBookedDates = async () => {
+      try {
+        // Fetch all bookings for this room (if roomId is provided)
+        if (roomId) {
+          const response = await fetch(`/api/bookings/availability?room_id=${roomId}`);
+          const result = await response.json();
+          
+          if (result.success) {
+            // Extract booked dates from the bookings
+            // Only mark dates as booked from check-in to day before check-out
+            // since check-out day is available after 10 AM
+            const dates = [];
+            result.data.forEach(booking => {
+              const checkIn = new Date(booking.check_in_date);
+              const checkOut = new Date(booking.check_out_date);
+              
+              // Add all dates between check-in and day before check-out to the booked dates
+              const currentDate = new Date(checkIn);
+              while (currentDate < checkOut) { // Note: < instead of <= to exclude check-out date
+                const dateStr = currentDate.toISOString().split('T')[0];
+                dates.push(dateStr);
+                currentDate.setDate(currentDate.getDate() + 1);
+              }
+            });
+            setBookedDates(dates);
+          }
+        } else {
+          // If no room ID is provided, fetch all bookings for all rooms
+          const response = await fetch('/api/bookings/availability');
+          const result = await response.json();
+          
+          if (result.success) {
+            // Extract booked dates from the bookings
+            // Only mark dates as booked from check-in to day before check-out
+            // since check-out day is available after 10 AM
+            const dates = [];
+            result.data.forEach(booking => {
+              const checkIn = new Date(booking.check_in_date);
+              const checkOut = new Date(booking.check_out_date);
+              
+              // Add all dates between check-in and day before check-out to the booked dates
+              const currentDate = new Date(checkIn);
+              while (currentDate < checkOut) { // Note: < instead of <= to exclude check-out date
+                const dateStr = currentDate.toISOString().split('T')[0];
+                dates.push(dateStr);
+                currentDate.setDate(currentDate.getDate() + 1);
+              }
+            });
+            setBookedDates(dates);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching booked dates:', error);
+        // In case of error, use an empty array
+        setBookedDates([]);
+      }
+    };
+    
+    fetchBookedDates();
+  }, [roomId]);
 
   const monthNames = [
     "January","February","March","April","May","June",
@@ -30,7 +91,11 @@ const Calendar = ({ selectedDate, onDateSelect }) => {
     ).padStart(2,"0")}`;
   };
 
-  const isBooked = (day) => bookedDates.includes(formatDate(day));
+  const isBooked = (day) => {
+    const dateStr = formatDate(day);
+    // Check if this date is in the booked dates array
+    return bookedDates.includes(dateStr);
+  };
   
   // Check if a date is in the past
   const isPastDate = (day) => {

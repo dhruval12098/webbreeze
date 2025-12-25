@@ -209,6 +209,7 @@ const Page = () => {
                     {showCalendar && (
                       <div className="absolute top-full left-0 right-0 mt-2 z-10">
                         <CalendarComponent 
+                          roomId={roomData?.id}
                           onDateSelect={(date) => {
                             console.log("Selected date:", date);
                             setShowCalendar(false);
@@ -222,7 +223,19 @@ const Page = () => {
                   <button
                     className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent"
                     style={{ fontFamily: "Plus Jakarta Sans" }}
-                    onClick={() => window.location.href = "/booking"}
+                    onClick={() => {
+                      // Store room data in sessionStorage before navigating
+                      if (roomData) {
+                        sessionStorage.setItem('selectedRoom', JSON.stringify({
+                          id: roomData.id,
+                          title: roomData.title,
+                          price: roomData.price,
+                          label: roomData.label,
+                          description: roomData.description
+                        }));
+                      }
+                      window.location.href = "/booking";
+                    }}
                   >
                     BOOK NOW
                     <div className="w-8 h-8 bg-[#594B00] text-white rounded-full flex items-center justify-center">
@@ -385,6 +398,7 @@ const Page = () => {
                 {showCalendar && (
                   <div className="absolute top-full left-0 right-0 mt-2 z-10">
                     <CalendarComponent 
+                      roomId={roomData?.id}
                       onDateSelect={(date) => {
                         console.log("Selected date:", date);
                         setShowCalendar(false);
@@ -398,7 +412,19 @@ const Page = () => {
               <button
                 className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent"
                 style={{ fontFamily: "Plus Jakarta Sans" }}
-                onClick={() => window.location.href = "/booking"}
+                onClick={() => {
+                  // Store room data in sessionStorage before navigating
+                  if (roomData) {
+                    sessionStorage.setItem('selectedRoom', JSON.stringify({
+                      id: roomData.id,
+                      title: roomData.title,
+                      price: roomData.price,
+                      label: roomData.label,
+                      description: roomData.description
+                    }));
+                  }
+                  window.location.href = "/booking";
+                }}
               >
                 BOOK NOW
                 <div className="w-8 h-8 bg-[#594B00] text-white rounded-full flex items-center justify-center">

@@ -1,9 +1,95 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import BookingSidebar from "./BookingSidebar";
 import ProgressBar from "./ProgressBar";
+import { useAuth } from '@/app/context/AuthContext';
 
 const StepTwo = ({ goToStep }) => {
+  const [guestDetails, setGuestDetails] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    totalGuests: 1,
+    specialRequests: ''
+  });
+  const [isProceeding, setIsProceeding] = useState(false);
+  
+  const { user, isAuthenticated, loading } = useAuth();
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      alert('Please log in to continue with your booking');
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated, loading]);
+  
+  // Don't render if not authenticated
+  if (!loading && !isAuthenticated) {
+    return null; // The redirect will happen before this renders
+  }
+  
+  // Load booking data from sessionStorage and user details
+  useEffect(() => {
+    // Load user details if available
+    if (user) {
+      setGuestDetails(prev => ({
+        ...prev,
+        fullName: user.name || prev.fullName,
+        email: user.email || prev.email
+      }));
+    }
+    
+    // Load booking data from sessionStorage
+    const storedBookingData = sessionStorage.getItem('bookingData');
+    if (storedBookingData) {
+      const bookingData = JSON.parse(storedBookingData);
+      setGuestDetails(prev => ({
+        ...prev,
+        fullName: bookingData.fullName || user?.name || prev.fullName,
+        email: bookingData.email || user?.email || prev.email,
+        phone: bookingData.phone || prev.phone,
+        totalGuests: bookingData.totalGuests || prev.totalGuests,
+        specialRequests: bookingData.specialRequests || prev.specialRequests
+      }));
+    }
+  }, [user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setGuestDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleProceed = () => {
+    setIsProceeding(true);
+    
+    // Load existing booking data from sessionStorage
+    const storedBookingData = sessionStorage.getItem('bookingData');
+    let bookingData = {};
+    
+    if (storedBookingData) {
+      bookingData = JSON.parse(storedBookingData);
+    }
+    
+    // Add guest details to booking data
+    const updatedBookingData = {
+      ...bookingData,
+      ...guestDetails
+    };
+    
+    // Save updated booking data to sessionStorage
+    sessionStorage.setItem('bookingData', JSON.stringify(updatedBookingData));
+    
+    // Add a small delay to show the loading state
+    setTimeout(() => {
+      setIsProceeding(false);
+      goToStep(3);
+    }, 500);
+  };
+
   return (
     <div className="w-full min-h-[80vh] flex justify-center items-start py-8 md:py-12">
       {/* WRAPPER */}
@@ -36,6 +122,9 @@ const StepTwo = ({ goToStep }) => {
               </label>
               <input
                 type="text"
+                name="fullName"
+                value={guestDetails.fullName}
+                onChange={handleChange}
                 placeholder="Name"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
@@ -52,6 +141,9 @@ const StepTwo = ({ goToStep }) => {
               </label>
               <input
                 type="email"
+                name="email"
+                value={guestDetails.email}
+                onChange={handleChange}
                 placeholder="Email"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
@@ -68,6 +160,9 @@ const StepTwo = ({ goToStep }) => {
               </label>
               <input
                 type="tel"
+                name="phone"
+                value={guestDetails.phone}
+                onChange={handleChange}
                 placeholder="Phone"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
@@ -84,6 +179,10 @@ const StepTwo = ({ goToStep }) => {
               </label>
               <input
                 type="number"
+                name="totalGuests"
+                value={guestDetails.totalGuests}
+                onChange={handleChange}
+                min="1"
                 placeholder="0"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
@@ -96,9 +195,12 @@ const StepTwo = ({ goToStep }) => {
                 className="font-sans text-sm"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
               >
-                Message
+                Special Requests
               </label>
               <textarea
+                name="specialRequests"
+                value={guestDetails.specialRequests}
+                onChange={handleChange}
                 placeholder="Add Your Special Request here"
                 className="w-full bg-[#FFFBE6] p-3 rounded-xl font-sans outline-none mt-1 min-h-[120px] border border-[#594B00]/30"
                 style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
@@ -109,9 +211,15 @@ const StepTwo = ({ goToStep }) => {
             <button
               className="mt-4 w-full bg-[#594B00] text-white p-3 rounded-full font-sans hover:bg-[#594B00]/90 transition"
               style={{ fontFamily: "Plus Jakarta Sans" }}
-              onClick={() => goToStep(3)}
+              onClick={handleProceed}
+              disabled={isProceeding}
             >
-              Proceed
+              {isProceeding ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Proceeding...
+                </div>
+              ) : 'Proceed'}
             </button>
 
             {/* FOOTNOTE */}

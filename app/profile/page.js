@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Heart, Edit, LogOut } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
+import BookingHistory from '../components/profile/BookingHistory';
 
 const Page = () => {
   const [loading, setLoading] = useState(true);
@@ -188,16 +189,7 @@ const Page = () => {
           )}
 
           {activeTab === 'bookings' && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-[#173A00] mb-4">My Bookings</h2>
-              <p className="text-[#594B00]">Your booking history will be displayed here.</p>
-              <div className="space-y-4">
-                {/* Placeholder for booking items */}
-                <div className="p-4 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
-                  <p className="text-center text-[#594B00]">No bookings found</p>
-                </div>
-              </div>
-            </div>
+            <BookingHistory />
           )}
 
           {activeTab === 'favorites' && (

@@ -1,10 +1,37 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import BookingSidebar from './BookingSidebar';
 import ProgressBar from './ProgressBar';
+import { useAuth } from '@/app/context/AuthContext';
 
 const Confirmation = ({ goToStep }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      alert('Please log in to view your booking confirmation');
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated, loading]);
+  
+  // Don't render if not authenticated
+  if (!loading && !isAuthenticated) {
+    return null; // The redirect will happen before this renders
+  }
+  
+  // Clear booking data after a delay to ensure user sees the confirmation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      sessionStorage.removeItem('bookingData');
+    }, 5000); // Clear after 5 seconds
+    
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <div className="w-full min-h-screen flex justify-center items-start py-8 md:py-12 bg-gray-50">
       {/* WRAPPER */}
@@ -36,68 +63,17 @@ const Confirmation = ({ goToStep }) => {
             Thank you for choosing our homestay. Your booking has been successfully processed.
           </p>
 
-          {/* Booking Summary Card */}
+          {/* Booking Success Message */}
           <div className="bg-[#FFFBE6] rounded-2xl p-6 md:p-8 text-left w-full max-w-2xl shadow-sm mb-6">
             <h2 
               className="text-lg font-semibold mb-4"
               style={{ fontFamily: "Playfair Display", color: "#594B00" }}
             >
-              Booking Summary
+              Booking Confirmed!
             </h2>
-            <div className="flex justify-between mb-2">
-              <span 
-                className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                Check-in:
-              </span>
-              <span 
-                className="font-sans font-medium text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                01/01/2025
-              </span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span 
-                className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                Check-out:
-              </span>
-              <span 
-                className="font-sans font-medium text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                01/03/2025
-              </span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span 
-                className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                Guests:
-              </span>
-              <span 
-                className="font-sans font-medium text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                5
-              </span>
-            </div>
-            <div className="flex justify-between font-bold mt-3 pt-3 border-t border-gray-200">
-              <span
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                Total:
-              </span>
-              <span
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
-              >
-                ₹41,690/-
-              </span>
-            </div>
+            <p className="text-base" style={{ color: "#173A00", fontFamily: "Plus Jakarta Sans" }}>
+              Your booking has been successfully confirmed. You will receive a confirmation email with all the details shortly.
+            </p>
           </div>
 
           {/* Action Buttons */}

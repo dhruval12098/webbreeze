@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from '@/app/context/AuthContext';
 
 import StepOne from "../components/booking/StepOne";
 import StepTwo from "../components/booking/StepTwo";
@@ -9,8 +10,21 @@ import Confirmation from "../components/booking/Confirmation";
 
 const Page = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const { isAuthenticated, loading } = useAuth();
 
   const goToStep = (step) => setCurrentStep(step);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated, loading]);
+
+  // Don't render if not authenticated
+  if (!loading && !isAuthenticated) {
+    return null; // The redirect will happen before this renders
+  }
 
   return (
     <main className="w-full min-h-screen flex">
