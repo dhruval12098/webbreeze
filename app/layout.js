@@ -5,6 +5,7 @@ import ConditionalNavbar from "./components/common/ConditionalNavbar";
 import ConditionalFooter from "./components/common/ConditionalFooter";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { AuthProvider } from './context/AuthContext';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,12 +28,14 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SmoothScroll>
-          <ConditionalNavbar />
-          {children}
-          <ConditionalFooter />
-          <ToastContainer position="top-right" autoClose={5000} />
-        </SmoothScroll>
+        <AuthProvider>
+          <SmoothScroll>
+            <ConditionalNavbar />
+            {children}
+            <ConditionalFooter />
+            <ToastContainer position="top-right" autoClose={5000} />
+          </SmoothScroll>
+        </AuthProvider>
       </body>
     </html>
   );

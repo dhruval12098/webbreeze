@@ -212,22 +212,29 @@ const RoomDetailsEditPage = () => {
         const image = roomDetails.images[i];
         const previousUrl = previousImageUrls[i];
         
-        // Use updateImage function which handles both deletion and upload
-        const imageResult = await updateImage(
-          image?.file || null, 
-          previousUrl, 
-          'rooms',
-          supabase
-        );
-        
-        if (!imageResult.success && image?.file) {
-          console.error('Error processing image:', imageResult.error);
-          showToast('Error processing image: ' + imageResult.error, 'error');
-          continue;
+        // Only process image update if there's a new file for this specific slot
+        if (image?.file) {
+          // Use updateImage function which handles both deletion and upload
+          const imageResult = await updateImage(
+            image.file, 
+            previousUrl, 
+            'rooms',
+            supabase
+          );
+          
+          if (!imageResult.success) {
+            console.error(`Error processing image for slot ${i}:`, imageResult.error);
+            showToast(`Error processing image for slot ${i + 1}: ` + imageResult.error, 'error');
+            // Don't continue with save if there's an error
+            return;
+          }
+          
+          // Set the new image URL
+          imageUrls[i] = imageResult.newImageUrl;
+        } else {
+          // If no new file for this slot, keep the existing URL or null
+          imageUrls[i] = image?.isExisting ? image.url : null;
         }
-        
-        // Set the new image URL or keep existing one or set to null
-        imageUrls[i] = imageResult.newImageUrl || (image?.isExisting ? image.url : null) || null;
       }
       
       // Prepare data for database

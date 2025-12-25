@@ -1,216 +1,218 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Heart, Edit, LogOut } from "lucide-react";
-
-// Sample Data
-const bookings = [
-  {
-    id: 1,
-    title: "Beachside Villa",
-    location: "Goa, India",
-    dateRange: "Dec 15 - Dec 20, 2025",
-    status: "Confirmed",
-  },
-  {
-    id: 2,
-    title: "Mountain Cabin",
-    location: "Manali, India",
-    dateRange: "Jan 5 - Jan 10, 2026",
-    status: "Pending",
-  },
-];
-
-const wishlist = [
-  {
-    id: 1,
-    title: "Luxury Apartment",
-    location: "Bali, Indonesia",
-  },
-  {
-    id: 2,
-    title: "City Loft",
-    location: "Tokyo, Japan",
-  },
-];
-
-const activities = [
-  {
-    id: 1,
-    type: "Booking",
-    message: "You confirmed a booking at Beachside Villa",
-    date: "Dec 1, 2025",
-  },
-  {
-    id: 2,
-    type: "Review",
-    message: "You left a review for Mountain Cabin",
-    date: "Nov 28, 2025",
-  },
-];
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 
 const Page = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('profile');
+  const router = useRouter();
+  const { user, token, logout, updateUser, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    // Wait for auth context to finish loading
+    if (authLoading) {
+      return; // Don't do anything while auth is loading
+    }
+
+    // Now check if user is authenticated
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    
+    // Always fetch fresh user data from the API
+    fetchUserData();
+  }, [token, authLoading, router]);
+
+  // Effect to handle auth state when user data fetch fails
+  useEffect(() => {
+    if (error && error.includes('Session has expired')) {
+      logout();
+      router.push('/login');
+    }
+  }, [error, logout, router]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch('/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch user data');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        updateUser(data.user);
+      } else {
+        throw new Error(data.error || 'Failed to fetch user data');
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Profile fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+    router.refresh();
+  };
+
+  // Show loading while either auth or profile data is loading
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-plus-jakarta-sans">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-700">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-plus-jakarta-sans">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={() => router.push('/login')}
+            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-plus-jakarta-sans">
-      
-      {/* ===================== PROFILE HEADER ===================== */}
-      <div className="bg-white shadow-md rounded-b-3xl px-8 py-12">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-8">
-          
-          {/* Left Side - Static Avatar */}
-          <div className="flex-shrink-0 w-48 h-48 rounded-full bg-gray-300 flex items-center justify-center">
-            <span className="text-gray-500 text-xl font-bold">Avatar</span>
-          </div>
-
-          {/* Right Side - User Info */}
-          <div className="flex-1 flex flex-col gap-4">
-            <h1 className="text-3xl md:text-4xl font-playfair-display font-bold text-gray-900">
-              Dhruval Patel
-            </h1>
-            <p className="text-gray-600">Member since Jan 2020</p>
-            <p className="text-gray-700 max-w-xl">
-              Traveler, photographer, and design enthusiast. Sharing my journey one stay at a time.
-            </p>
-            <p className="text-gray-600">
-              dhruval@example.com | +91 9876543210 | India
-            </p>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 mt-4">
-              <button className="px-6 py-2 bg-black text-white rounded-2xl flex items-center gap-2 hover:bg-gray-800 transition">
-                <Edit size={16} /> Edit Profile
-              </button>
-              <button className="px-6 py-2 bg-gray-200 text-gray-900 rounded-2xl flex items-center gap-2 hover:bg-gray-300 transition">
-                <LogOut size={16} /> Logout
-              </button>
+    <div className="min-h-screen bg-gradient-to-b from-[#FFFBE6] to-white font-plus-jakarta-sans">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header Section */}
+        <div className="bg-white p-6 mb-8 border border-[#594B00]/30 rounded-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-[#173A00] mb-2">My Profile</h1>
+              <p className="text-[#594B00]">Manage your account information and preferences</p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===================== TABS ===================== */}
-      <div className="mt-8 px-8">
-        <div className="flex gap-8 border-b border-gray-200">
-          {["overview", "bookings", "wishlist"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-2 font-medium text-gray-700 transition ${
-                activeTab === tab
-                  ? "border-b-2 border-black text-gray-900"
-                  : "hover:text-gray-900"
-              }`}
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-6 py-3 bg-[#594B00] text-white rounded-xl hover:bg-[#173A00] transition-colors"
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              <LogOut size={20} />
+              Logout
             </button>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {/* ===================== CONTENT ===================== */}
-      <div className="px-8 py-10">
-        
-        {/* Overview */}
-        {activeTab === "overview" && (
-          <div>
-            <h2 className="text-2xl font-playfair-display font-bold mb-6">
-              Recent Activity
-            </h2>
-            <ul className="space-y-4">
-              {activities.map((act) => (
-                <li
-                  key={act.id}
-                  className="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center"
-                >
+        {/* Tabs */}
+        <div className="bg-white p-2 mb-6 border border-[#594B00]/30 rounded-xl inline-block">
+          <div className="flex space-x-2">
+            {['profile', 'bookings', 'favorites'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2 rounded-lg transition-colors capitalize ${activeTab === tab 
+                  ? 'bg-[#594B00] text-white' 
+                  : 'text-[#594B00] hover:bg-[#FFFBE6]'}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white p-6 border border-[#594B00]/30 rounded-xl">
+          {activeTab === 'profile' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#594B00] to-[#173A00] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                  {user?.name?.charAt(0) || 'U'}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-[#173A00]">{user?.name || "User"}</h2>
+                  <p className="text-[#594B00]">{user?.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-900 font-medium">{act.message}</p>
-                    <p className="text-gray-600 text-sm">{act.date}</p>
+                    <label className="block text-sm font-semibold text-[#173A00] mb-1">Full Name</label>
+                    <p className="p-3 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">{user?.name || "N/A"}</p>
                   </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-white text-sm ${
-                      act.type === "Booking" ? "bg-green-500" : "bg-blue-500"
-                    }`}
-                  >
-                    {act.type}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Bookings */}
-        {activeTab === "bookings" && (
-          <div>
-            <h2 className="text-2xl font-playfair-display font-bold mb-6">
-              My Bookings
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {bookings.map((b) => (
-                <div
-                  key={b.id}
-                  className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition"
-                >
-                  <div className="w-full h-48 bg-gray-300 flex items-center justify-center">
-                    <span className="text-gray-500 font-medium">Image</span>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-medium text-gray-900 text-lg">{b.title}</h3>
-                    <p className="text-gray-600 text-sm">{b.location}</p>
-                    <p className="text-gray-600 text-sm">{b.dateRange}</p>
-                    <span
-                      className={`inline-block mt-2 px-3 py-1 rounded-full text-white text-sm ${
-                        b.status === "Confirmed"
-                          ? "bg-green-500"
-                          : b.status === "Pending"
-                          ? "bg-yellow-500"
-                          : "bg-gray-400"
-                      }`}
-                    >
-                      {b.status}
-                    </span>
-                    <button className="mt-4 w-full py-2 bg-black text-white rounded-2xl hover:bg-gray-800 transition">
-                      View Details
-                    </button>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#173A00] mb-1">Email Address</label>
+                    <p className="p-3 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">{user?.email || "N/A"}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Wishlist */}
-        {activeTab === "wishlist" && (
-          <div>
-            <h2 className="text-2xl font-playfair-display font-bold mb-6">
-              Wishlist
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {wishlist.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition"
-                >
-                  <div className="w-full h-48 bg-gray-300 flex items-center justify-center">
-                    <span className="text-gray-500 font-medium">Image</span>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#173A00] mb-1">User ID</label>
+                    <p className="p-3 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30 font-mono text-sm">{user?.id || "N/A"}</p>
                   </div>
-                  <div className="p-4 flex flex-col gap-2">
-                    <h3 className="font-medium text-gray-900 text-lg">{item.title}</h3>
-                    <p className="text-gray-600 text-sm">{item.location}</p>
-                    <div className="flex justify-between items-center mt-2">
-                      <Heart className="text-red-500" />
-                      <button className="py-1 px-3 bg-black text-white rounded-2xl text-sm hover:bg-gray-800 transition">
-                        View Details
-                      </button>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#173A00] mb-1">Member Since</label>
+                    <p className="p-3 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
+                      {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) : "N/A"}
+                    </p>
                   </div>
                 </div>
-              ))}
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#173A00] mb-1">Account Status</label>
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <span className="text-green-700 font-medium">Active</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {activeTab === 'bookings' && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-[#173A00] mb-4">My Bookings</h2>
+              <p className="text-[#594B00]">Your booking history will be displayed here.</p>
+              <div className="space-y-4">
+                {/* Placeholder for booking items */}
+                <div className="p-4 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
+                  <p className="text-center text-[#594B00]">No bookings found</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'favorites' && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-[#173A00] mb-4">Favorite Rooms</h2>
+              <p className="text-[#594B00]">Your favorite rooms will be displayed here.</p>
+              <div className="space-y-4">
+                {/* Placeholder for favorite items */}
+                <div className="p-4 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
+                  <p className="text-center text-[#594B00]">No favorites found</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

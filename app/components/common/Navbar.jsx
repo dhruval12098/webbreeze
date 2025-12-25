@@ -2,10 +2,24 @@
 
 import React, { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/app/context/AuthContext'
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const currentPath = usePathname()
+  const { user, token, logout, loading, verifySession } = useAuth()
+  
+  useEffect(() => {
+    // Verify session on component mount to ensure auth state is accurate
+    if (!token && !loading) {
+      verifySession();
+    }
+  }, [token, loading, verifySession]);
+  
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/'
+  }
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -15,6 +29,45 @@ const Navbar = () => {
     { name: 'Reviews', href: '/reviews' },
     { name: 'About', href: '/about' }
   ]
+
+  // Don't render auth buttons until loading is complete
+  const renderAuthButtons = () => {
+    if (loading) {
+      return (
+        <div className="rounded-full px-6 py-2 text-sm uppercase tracking-wide text-[#173A00]">
+          <div className="w-16 h-4 bg-[#C5D9B9] rounded animate-pulse"></div>
+        </div>
+      )
+    }
+
+    if (token) {
+      return (
+        <button 
+          className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9] flex items-center gap-2"
+          onClick={() => window.location.href = '/profile'}
+        >
+          Profile
+        </button>
+      )
+    }
+
+    return (
+      <>
+        <a
+          href="/login"
+          className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9]"
+        >
+          Login
+        </a>
+        <a
+          href="/signup"
+          className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+        >
+          Sign-up
+        </a>
+      </>
+    )
+  }
 
   return (
     <>
@@ -46,18 +99,7 @@ const Navbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden lg:flex gap-3 h-14 bg-[#E0ECD9] rounded-full px-2.5 py-2 items-center">
-            <a
-              href="/login"
-              className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9]"
-            >
-              Login
-            </a>
-            <a
-              href="/signup"
-              className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
-            >
-              Sign-up
-            </a>
+            {renderAuthButtons()}
           </div>
 
           {/* Mobile Hamburger */}
@@ -119,20 +161,47 @@ const Navbar = () => {
 
           {/* Mobile Auth Buttons */}
           <div className="flex flex-col gap-3 pt-4 border-t border-gray-200">
-            <a
-              href="/login"
-              className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Login
-            </a>
-            <a
-              href="/signup"
-              className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Sign-up
-            </a>
+            {loading ? (
+              <div className="rounded-full px-8 py-2 text-sm uppercase tracking-wide">
+                <div className="w-full h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ) : token ? (
+              <div className="flex flex-col gap-3">
+                <a
+                  href="/profile"
+                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Profile
+                </a>
+                <button
+                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+                  onClick={() => {
+                    handleLogout()
+                    setIsMenuOpen(false)
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <>
+                <a
+                  href="/login"
+                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </a>
+                <a
+                  href="/signup"
+                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign-up
+                </a>
+              </>
+            )}
           </div>
         </div>
       </div>

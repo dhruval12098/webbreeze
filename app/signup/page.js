@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/app/context/AuthContext'
 
 export default function SignupPage() {
   const [name, setName] = useState('')
@@ -9,6 +11,52 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const { login } = useAuth()
+
+  const handleSignup = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password, rememberMe }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Store the token and user data using the auth context
+        login(data.user, data.token, data.expiresAt)
+        
+        // Redirect to profile or home page
+        router.push('/profile')
+        router.refresh()
+      } else {
+        setError(data.error || 'Registration failed')
+      }
+    } catch (err) {
+      setError('An error occurred during registration')
+      console.error('Signup error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white py-8">
@@ -68,6 +116,13 @@ export default function SignupPage() {
             <p className="text-[#594B00]/80 mb-6 md:mb-8">
               Join our community and unlock personalized experiences.
             </p>
+
+            {/* Error message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
 
             {/* Name Input */}
             <div className="mb-5 md:mb-6">
@@ -149,10 +204,26 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Signup Button */}
-            <button className="w-full bg-[#594B00] hover:bg-[#173A00] text-white font-semibold py-3 rounded-xl transition-colors mb-5 md:mb-6">
-              Create Account
-            </button>
+            {/* Remember Me and Signup Button */}
+            <div className="flex items-center justify-between mb-5 md:mb-6">
+              <label className="flex items-center gap-2 text-[#173A00]">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-[#594B00] border border-[#594B00]/30 rounded focus:ring-[#594B00] focus:ring-2"
+                />
+                <span>Remember me</span>
+              </label>
+              
+              <button 
+                onClick={handleSignup}
+                disabled={loading}
+                className={`px-6 py-2 ${loading ? 'bg-gray-400' : 'bg-[#594B00] hover:bg-[#173A00]'} text-white font-semibold rounded-xl transition-colors`}
+              >
+                {loading ? 'Creating account...' : 'Create Account'}
+              </button>
+            </div>
 
             {/* Divider */}
             <div className="flex items-center mb-5 md:mb-6">
