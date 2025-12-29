@@ -220,7 +220,7 @@ const StepThree = ({ goToStep }) => {
 
             {/* FOOTNOTE */}
             <p 
-              className="mt-4 text-xs text-[#594B00]/70 font-sans text-center"
+              className="mt-4 text-xs text-[#594B00] font-sans text-center"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
               *Your booking will be confirmed upon successful payment.*

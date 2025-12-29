@@ -160,7 +160,7 @@ const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
       </div>
 
       {/* Week Days */}
-      <div className="grid grid-cols-7 text-center text-xs text-gray-400 mb-2">
+      <div className="grid grid-cols-7 text-center text-xs text-gray-600 mb-2">
         <span>Sun</span>
         <span>Mon</span>
         <span>Tue</span>

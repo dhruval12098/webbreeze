@@ -103,7 +103,7 @@ export default function LoginPage() {
             </h1>
             
             {/* Subtitle */}
-            <p className="text-[#594B00]/80 mb-6 md:mb-8">
+            <p className="text-[#594B00] mb-6 md:mb-8">
               Access your bookings, preferences, and personalized recommendations.
             </p>
 
@@ -178,7 +178,7 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="flex items-center mb-5 md:mb-6">
               <div className="flex-1 border-t border-[#594B00]/30"></div>
-              <span className="px-4 text-sm text-[#594B00]/80">or continue with</span>
+              <span className="px-4 text-sm text-[#594B00]">or continue with</span>
               <div className="flex-1 border-t border-[#594B00]/30"></div>
             </div>
 
@@ -193,7 +193,7 @@ export default function LoginPage() {
             </div>
 
             {/* Sign up link */}
-            <p className="text-center text-[#594B00]/80">
+            <p className="text-center text-[#594B00]">
               Don't have an account?{' '}
               <a href="/signup" className="text-[#594B00] font-semibold hover:text-[#173A00]">
                 Sign up

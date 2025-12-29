@@ -341,7 +341,7 @@ const StepOne = ({ goToStep }) => {
 
             {/* TEXT BOTTOM LEFT */}
             <p 
-              className="mt-4 text-xs text-[#594B00]/70 font-sans text-center md:text-left"
+              className="mt-4 text-xs text-[#594B00] font-sans text-center md:text-left"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
               *Choose your stay dates. Entire homestay is ₹9,900 per night.*

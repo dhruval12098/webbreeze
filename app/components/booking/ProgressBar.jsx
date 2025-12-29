@@ -39,7 +39,7 @@ const ProgressBar = ({ active = 1, onBack }) => {
                 {step.id}
               </div>
               <span className={`text-[10px] md:text-xs mt-1 md:mt-2 absolute top-7 md:top-8 whitespace-nowrap ${
-                step.id <= active ? "text-[#594B00] font-medium" : "text-[#594B00]/50"
+                step.id <= active ? "text-[#594B00] font-medium" : "text-[#594B00]/70"
               }`}>
                 {step.label}
               </span>
@@ -50,7 +50,7 @@ const ProgressBar = ({ active = 1, onBack }) => {
               <div className="flex-1 h-0.5 relative">
                 <div 
                   className={`h-0.5 absolute top-0 left-0 transition-all duration-300 ${
-                    step.id < active ? "bg-[#594B00] w-full" : "bg-[#594B00]/30 w-full"
+                    step.id < active ? "bg-[#594B00] w-full" : "bg-[#594B00]/50 w-full"
                   }`} 
                 />
               </div>
