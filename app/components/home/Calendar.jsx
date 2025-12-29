@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
   const today = new Date();
@@ -122,12 +123,6 @@ const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
   };
 
   const prevMonth = () => {
-    // Prevent going to previous months if we're at the current month
-    const currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    const displayedMonthDate = new Date(currentYear, currentMonth, 1);
-    
-    if (displayedMonthDate <= currentMonthDate) return;
-    
     if (currentMonth === 0) {
       setCurrentMonth(11);
       setCurrentYear((prev) => prev - 1);
@@ -135,16 +130,18 @@ const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto p-4 bg-white rounded-2xl shadow-lg border border-gray-100">
+    <div className="w-full max-w-sm mx-auto p-4 bg-white rounded-2xl shadow-lg border border-gray-100" onClick={(e) => e.stopPropagation()}>
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <button
-          onClick={prevMonth}
-          className="text-gray-600 hover:text-black text-lg transition"
-          disabled={currentYear === today.getFullYear() && currentMonth === today.getMonth()}
+          onClick={(e) => {
+            e.stopPropagation();
+            prevMonth();
+          }}
+          className="text-gray-600 hover:text-black transition"
         >
-          ‹
+          <ChevronLeft size={20} />
         </button>
 
         <h2 className="text-lg font-semibold tracking-wide">
@@ -152,10 +149,13 @@ const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
         </h2>
 
         <button
-          onClick={nextMonth}
-          className="text-gray-600 hover:text-black text-lg transition"
+          onClick={(e) => {
+            e.stopPropagation();
+            nextMonth();
+          }}
+          className="text-gray-600 hover:text-black transition"
         >
-          ›
+          <ChevronRight size={20} />
         </button>
       </div>
 

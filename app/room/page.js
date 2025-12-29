@@ -207,7 +207,7 @@ const Page = () => {
                     </button>
                     
                     {showCalendar && (
-                      <div className="absolute top-full left-0 right-0 mt-2 z-10">
+                      <div className="absolute top-full left-0 right-0 mt-2 z-10" ref={calendarRef}>
                         <CalendarComponent 
                           roomId={roomData?.id}
                           onDateSelect={(date) => {
