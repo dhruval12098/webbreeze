@@ -176,11 +176,12 @@ export async function POST(request) {
     
     // Check for overlapping bookings for the same room
     // Using daterange to check for overlaps as per the database constraint
+    // Note: check-out date is available for check-in since check-out happens at 10 AM
     const { data: overlappingBookings, error: overlapError } = await supabase
       .from('bookings')
       .select('id')
       .eq('room_id', bookingData.room_id)
-      .or(`and(check_in_date.lte.${bookingData.check_out_date},check_out_date.gte.${bookingData.check_in_date})`)
+      .or(`and(check_in_date.lt.${bookingData.check_out_date},check_out_date.gt.${bookingData.check_in_date})`)
       .in('booking_status', ['pending', 'confirmed']);
     
     if (overlapError) {

@@ -43,7 +43,7 @@ const Navbar = () => {
     if (token) {
       return (
         <button 
-          className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9] flex items-center gap-2"
+          className="rounded-full px-4 py-1 text-xs uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9] flex items-center gap-2"
           onClick={() => window.location.href = '/profile'}
         >
           Profile
@@ -55,13 +55,13 @@ const Navbar = () => {
       <>
         <a
           href="/login"
-          className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9]"
+          className="rounded-full px-4 py-1 text-xs uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9]"
         >
           Login
         </a>
         <a
           href="/signup"
-          className="rounded-full px-6 py-2 text-sm uppercase tracking-wide transition-all duration-200 font-light bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+          className="rounded-full px-4 py-1 text-xs uppercase tracking-wide transition-all duration-200 font-light bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
         >
           Sign-up
         </a>
@@ -74,18 +74,18 @@ const Navbar = () => {
       <nav className="w-full bg-[#173A00] py-2 border-b border-white/20">
         <div className="max-w-screen-xl mx-auto px-4 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center -my-2">
-            <img src="/logo.svg" alt="B&G Logo" className="h-20 w-auto brightness-0 invert" />
+          <div className="flex items-center -my-2 ml-4 mr-4">
+            <img src="/logo.svg" alt="B&G Logo" className="h-24 w-auto brightness-0 invert" />
           </div>
 
           {/* Desktop Links */}
-          <div className="hidden lg:flex flex-1 justify-center mx-2.5">
-            <div className="rounded-full px-8 py-3 flex items-center justify-between w-full max-w-6xl border-2 border-white/30">
+          <div className="hidden lg:flex flex-1 justify-center">
+            <div className="rounded-full px-6 py-2 flex items-center justify-between w-full max-w-6xl border-2 border-white/30">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
-                  className={`text-sm uppercase font-light tracking-wide whitespace-nowrap transition-colors px-6 py-2 rounded-full ${
+                  className={`text-xs uppercase font-light tracking-wide whitespace-nowrap transition-colors px-3 py-1 rounded-full ${
                     currentPath === link.href
                       ? 'bg-white text-[#173A00]'
                       : 'text-white hover:text-white/80'
@@ -98,7 +98,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Auth Buttons */}
-          <div className="hidden lg:flex gap-3 h-14 bg-[#E0ECD9] rounded-full px-2.5 py-2 items-center">
+          <div className="hidden lg:flex gap-4 h-12 bg-[#E0ECD9] rounded-full px-4 py-1 items-center ml-4">
             {renderAuthButtons()}
           </div>
 
@@ -149,7 +149,7 @@ const Navbar = () => {
               <a
                 key={link.name}
                 href={link.href}
-                className={`text-lg uppercase font-light py-3 rounded-lg px-6 transition-colors ${
+                className={`text-base uppercase font-light py-2 rounded-lg px-4 transition-colors ${
                   currentPath === link.href ? 'bg-[#173A00] text-white' : 'text-[#173A00] hover:bg-[#E0ECD9]'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
@@ -169,13 +169,13 @@ const Navbar = () => {
               <div className="flex flex-col gap-3">
                 <a
                   href="/profile"
-                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+                  className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Profile
                 </a>
                 <button
-                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+                  className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
                   onClick={() => {
                     handleLogout()
                     setIsMenuOpen(false)
@@ -188,14 +188,14 @@ const Navbar = () => {
               <>
                 <a
                   href="/login"
-                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+                  className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Login
                 </a>
                 <a
                   href="/signup"
-                  className="rounded-full px-8 py-2 text-sm uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+                  className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Sign-up
