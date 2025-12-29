@@ -47,81 +47,6 @@ const Toast = ({ message, type, isVisible, onClose }) => {
   );
 };
 
-const AnimatedLink = ({ href, children, isExternal = false }) => {
-  const text = children;
-  
-  if (isExternal) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block relative overflow-hidden group"
-        style={{ lineHeight: "1.2" }}
-      >
-        <span className="inline-block">
-          {text.split("").map((char, index) => (
-            <span
-              key={index}
-              className="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full"
-              style={{ transitionDelay: `${index * 30}ms` }}
-            >
-              {char === " " ? "\u00A0" : char}
-            </span>
-          ))}
-        </span>
-
-        <span
-          className="absolute top-0 left-0 inline-block translate-y-full"
-        >
-          {text.split("").map((char, index) => (
-            <span
-              key={index}
-              className="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full"
-              style={{ transitionDelay: `${index * 30}ms` }}
-            >
-              {char === " " ? "\u00A0" : char}
-            </span>
-          ))}
-        </span>
-      </a>
-    );
-  }
-
-  return (
-    <Link
-      href={href}
-      className="block relative overflow-hidden group"
-      style={{ lineHeight: "1.2" }}
-    >
-      <span className="inline-block">
-        {text.split("").map((char, index) => (
-          <span
-            key={index}
-            className="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full"
-            style={{ transitionDelay: `${index * 30}ms` }}
-          >
-            {char === " " ? "\u00A0" : char}
-          </span>
-        ))}
-      </span>
-
-      <span
-        className="absolute top-0 left-0 inline-block translate-y-full"
-      >
-        {text.split("").map((char, index) => (
-          <span
-            key={index}
-            className="inline-block transition-transform duration-300 ease-out group-hover:-translate-y-full"
-            style={{ transitionDelay: `${index * 30}ms` }}
-          >
-            {char === " " ? "\u00A0" : char}
-          </span>
-        ))}
-      </span>
-    </Link>
-  );
-};
 
 const Footer = () => {
   // Toast notification state
@@ -251,12 +176,42 @@ const Footer = () => {
           className="flex flex-col space-y-2 sm:space-y-3 text-base sm:text-lg"
           style={{ fontFamily: "Plus Jakarta Sans" }}
         >
-          <AnimatedLink href="/">Home</AnimatedLink>
-          <AnimatedLink href="/room">Room</AnimatedLink>
-          <AnimatedLink href="/gallery">Gallery</AnimatedLink>
-          <AnimatedLink href="/contact">Contact</AnimatedLink>
-          <AnimatedLink href="/reviews">Reviews</AnimatedLink>
-          <AnimatedLink href="/about">About</AnimatedLink>
+          <Link href="/" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Home
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/room" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Room
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/gallery" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Gallery
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/contact" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Contact
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/reviews" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Reviews
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/about" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            About
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
         </nav>
       </div>
 
@@ -286,15 +241,24 @@ const Footer = () => {
               className="flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-2 text-base sm:text-lg"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
-              <AnimatedLink href="https://linkedin.com" isExternal>
-                LinkedIn ↗
-              </AnimatedLink>
-              <AnimatedLink href="https://wa.me/" isExternal>
-                Whatsapp ↗
-              </AnimatedLink>
-              <AnimatedLink href="https://instagram.com" isExternal>
-                Instagram ↗
-              </AnimatedLink>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+                LinkedIn
+                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  ↗
+                </span>
+              </a>
+              <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+                Whatsapp
+                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  ↗
+                </span>
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+                Instagram
+                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  ↗
+                </span>
+              </a>
             </div>
           </div>
 
@@ -304,8 +268,24 @@ const Footer = () => {
             style={{ fontFamily: "Plus Jakarta Sans" }}
           >
             <div className="w-full lg:w-auto border-t border-white/30 pt-3 sm:pt-4 space-y-2">
-              <AnimatedLink href="/terms">Terms & Conditions</AnimatedLink>
-              <AnimatedLink href="/privacy">Privacy Policy</AnimatedLink>
+              <Link href="/terms" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Terms & Conditions
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/privacy" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Privacy Policy
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
+          <Link href="/cancellation" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+            Cancellation Policy
+            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              ↗
+            </span>
+          </Link>
               <p className="text-white/60">© 2025 Breeze & Grains</p>
             </div>
           </div>

@@ -321,6 +321,15 @@ const Page = () => {
                     key={i}
                     className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
                     style={{ color: "#173A00" }}
+                    onClick={() => {
+                      if (item === "PRIVACY POLICY") {
+                        window.location.href = "/privacy";
+                      } else if (item === "TERMS & CONDITIONS") {
+                        window.location.href = "/terms";
+                      } else if (item === "CANCELLATION POLICY") {
+                        window.location.href = "/cancellation";
+                      }
+                    }}
                   >
                     {item}
                     <ArrowUpRight className="w-4 h-4" />
@@ -484,6 +493,15 @@ const Page = () => {
                   key={i}
                   className="p-4 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors"
                   style={{ color: "#173A00" }}
+                  onClick={() => {
+                    if (item === "PRIVACY POLICY") {
+                      window.location.href = "/privacy";
+                    } else if (item === "TERMS & CONDITIONS") {
+                      window.location.href = "/terms";
+                    } else if (item === "CANCELLATION POLICY") {
+                      window.location.href = "/cancellation";
+                    }
+                  }}
                 >
                   {item}
                   <ArrowUpRight className="w-4 h-4" />

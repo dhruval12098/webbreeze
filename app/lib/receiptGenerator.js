@@ -13,11 +13,26 @@ export const generateReceiptPDF = async (booking, user) => {
   });
 
   // Brand colors
-  const brandPrimary = [89, 75, 0];
-  const brandSecondary = [23, 58, 0];
+  const brandPrimary = [89, 75, 0]; // Gold/Brown
+  const brandSecondary = [23, 58, 0]; // Dark Green
+  const accentGold = [218, 165, 32]; // Lighter gold for accents
   const textPrimary = [31, 41, 55];
   const textSecondary = [107, 114, 128];
   const borderColor = [229, 231, 235];
+  const lightBg = [252, 252, 250];
+
+  // Page margins
+  const margin = 20;
+  const pageWidth = 210;
+  const contentWidth = pageWidth - (margin * 2);
+
+  // Header Section with gradient effect
+  doc.setFillColor(...lightBg);
+  doc.rect(0, 0, pageWidth, 50, 'F');
+  
+  doc.setDrawColor(...brandPrimary);
+  doc.setLineWidth(3);
+  doc.line(margin, 48, pageWidth - margin, 48);
 
   // Load and add logo
   try {
@@ -27,54 +42,61 @@ export const generateReceiptPDF = async (booking, user) => {
       img.onload = resolve;
       img.onerror = reject;
     });
-    doc.addImage(img, 'SVG', 20, 15, 40, 12);
+    doc.addImage(img, 'SVG', margin, 12, 45, 14);
   } catch (error) {
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setTextColor(...brandPrimary);
     doc.setFont(undefined, 'bold');
-    doc.text('BREEZEAND GRAINS', 20, 24);
+    doc.text('BREEZEAND GRAINS', margin, 22);
   }
 
-  // Receipt Title - Top Right
-  doc.setFontSize(20);
-  doc.setTextColor(...brandSecondary);
-  doc.setFont(undefined, 'bold');
-  doc.text('RECEIPT', 190, 20, { align: 'right' });
-
-  // Receipt details
-  doc.setFontSize(10);
-  doc.setTextColor(...textSecondary);
-  doc.setFont(undefined, 'normal');
-  doc.text(`Receipt #${booking.id.substring(0, 8).toUpperCase()}`, 190, 26, { align: 'right' });
-  doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 190, 31, { align: 'right' });
-
-  // Main divider
-  doc.setDrawColor(...brandPrimary);
-  doc.setLineWidth(0.5);
-  doc.line(20, 38, 190, 38);
-
-  // Customer & Status Row
-  let y = 48;
+  // Receipt Title Box - Top Right
+  doc.setFillColor(...brandPrimary);
+  doc.roundedRect(pageWidth - margin - 50, 12, 50, 24, 2, 2, 'F');
   
-  doc.setFontSize(10);
+  doc.setFontSize(16);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(undefined, 'bold');
+  doc.text('RECEIPT', pageWidth - margin - 25, 21, { align: 'center' });
+  
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.text(`#${booking.id.substring(0, 8).toUpperCase()}`, pageWidth - margin - 25, 28, { align: 'center' });
+  doc.text(new Date().toLocaleDateString('en-GB'), pageWidth - margin - 25, 32, { align: 'center' });
+
+  let y = 58;
+
+  // Customer Information Box
+  doc.setDrawColor(...borderColor);
+  doc.setLineWidth(1);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(margin, y, contentWidth * 0.58, 36, 3, 3, 'FD');
+
+  y += 7;
+  doc.setFontSize(8);
   doc.setTextColor(...brandPrimary);
   doc.setFont(undefined, 'bold');
-  doc.text('CUSTOMER', 20, y);
+  doc.text('CUSTOMER INFORMATION', margin + 5, y);
 
-  doc.setFontSize(12);
+  y += 7;
+  doc.setFontSize(11);
   doc.setTextColor(...textPrimary);
   doc.setFont(undefined, 'bold');
-  doc.text(user?.name || 'N/A', 20, y + 7);
+  doc.text(user?.name || 'N/A', margin + 5, y);
 
-  doc.setFontSize(10);
+  y += 5;
+  doc.setFontSize(8);
   doc.setTextColor(...textSecondary);
   doc.setFont(undefined, 'normal');
-  doc.text(user?.email || 'N/A', 20, y + 14);
+  doc.text(user?.email || 'N/A', margin + 5, y);
+
   if (user?.phone) {
-    doc.text(user.phone, 20, y + 21);
+    y += 4;
+    doc.text(user.phone, margin + 5, y);
   }
 
-  // Status Badge
+  // Status Badge Box
+  y = 65;
   let statusColor;
   let statusText = booking.booking_status?.toUpperCase() || 'PENDING';
   
@@ -88,149 +110,167 @@ export const generateReceiptPDF = async (booking, user) => {
     statusColor = [107, 114, 128];
   }
 
+  const statusBoxX = margin + (contentWidth * 0.58) + 8;
+  const statusBoxWidth = contentWidth * 0.42 - 8;
+
+  doc.setDrawColor(...statusColor);
+  doc.setLineWidth(1);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(statusBoxX, y, statusBoxWidth, 29, 3, 3, 'FD');
+
+  y += 7;
+  doc.setFontSize(7);
+  doc.setTextColor(...textSecondary);
+  doc.setFont(undefined, 'normal');
+  doc.text('STATUS', statusBoxX + (statusBoxWidth / 2), y, { align: 'center' });
+
+  y += 7;
   doc.setFillColor(...statusColor);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(150, y - 2, 40, 10, 3, 3, 'F');
+  doc.roundedRect(statusBoxX + 8, y - 4, statusBoxWidth - 16, 11, 2, 2, 'F');
+  
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
   doc.setFont(undefined, 'bold');
-  doc.text(statusText, 170, y + 4, { align: 'center' });
+  doc.text(statusText, statusBoxX + (statusBoxWidth / 2), y + 2, { align: 'center' });
 
   // Booking Details Section
-  y = 80;
+  y = 106;
   
   doc.setDrawColor(...borderColor);
-  doc.setLineWidth(0.2);
-  doc.setFillColor(249, 250, 251);
-  doc.rect(20, y, 170, 65, 'FD');
+  doc.setLineWidth(1);
+  doc.setFillColor(...lightBg);
+  doc.roundedRect(margin, y, contentWidth, 76, 3, 3, 'FD');
 
-  y += 8;
-  doc.setFontSize(12);
+  // Section header with accent line
+  y += 7;
+  doc.setFontSize(10);
   doc.setTextColor(...brandPrimary);
   doc.setFont(undefined, 'bold');
-  doc.text('BOOKING DETAILS', 25, y);
+  doc.text('BOOKING DETAILS', margin + 5, y);
+  
+  doc.setDrawColor(...accentGold);
+  doc.setLineWidth(0.8);
+  doc.line(margin + 5, y + 1.5, margin + 42, y + 1.5);
 
-  y += 12;
-  const detailsStartY = y;
+  y += 9;
+  const detailsY = y;
+  const col1X = margin + 5;
+  const col2X = margin + (contentWidth / 2) + 5;
 
-  // Left column details
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.setFont(undefined, 'normal');
-  doc.text('Room', 25, y);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...textPrimary);
-  doc.setFont(undefined, 'bold');
-  doc.text(booking.room_title || booking.room_name || booking.room_id || 'N/A', 25, y + 6);
-
-  y += 16;
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.text('Check-in', 25, y);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...textPrimary);
-  doc.text(new Date(booking.check_in_date).toLocaleDateString('en-GB'), 25, y + 6);
-
-  y += 16;
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.text('Check-out', 25, y);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...textPrimary);
-  doc.text(`${new Date(booking.check_out_date).toLocaleDateString('en-GB')} at 10:00 AM`, 25, y + 6);
-
-  // Right column details
-  y = detailsStartY;
-
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.text('Guests', 115, y);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...textPrimary);
-  doc.text(String(booking.total_guests || 0), 115, y + 6);
-
-  y += 16;
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.text('Check-in Time', 115, y);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...textPrimary);
-  doc.text(booking.check_in_time || 'Flexible', 115, y + 6);
-
-  y += 16;
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.text('Booking Date', 115, y);
-
-  doc.setFontSize(11);
-  doc.setTextColor(...textPrimary);
-  doc.text(new Date(booking.created_at).toLocaleDateString('en-GB'), 115, y + 6);
-
-  // Special Requests
-  if (booking.special_requests) {
-    y = 152;
-    doc.setFontSize(9);
+  // Helper function for detail rows with proper text wrapping
+  const addDetail = (label, value, x, yPos, maxWidth = 75) => {
+    doc.setFontSize(7);
     doc.setTextColor(...textSecondary);
-    doc.text('Special Requests', 25, y);
+    doc.setFont(undefined, 'normal');
+    doc.text(label, x, yPos);
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(...textPrimary);
-    const splitText = doc.splitTextToSize(booking.special_requests, 160);
-    doc.text(splitText, 25, y + 6);
+    doc.setFont(undefined, 'bold');
+    const lines = doc.splitTextToSize(String(value), maxWidth);
+    doc.text(lines, x, yPos + 4.5);
+    return yPos + 4.5 + ((lines.length - 1) * 4);
+  };
+
+  // Left column
+  y = detailsY;
+  y = addDetail('Room', booking.room_title || booking.room_name || booking.room_id || 'N/A', col1X, y, 75);
+  y += 10;
+  y = addDetail('Check-in Date', new Date(booking.check_in_date).toLocaleDateString('en-GB', { 
+    year: 'numeric', month: 'short', day: 'numeric' 
+  }), col1X, y, 75);
+  y += 10;
+  y = addDetail('Check-out Date', new Date(booking.check_out_date).toLocaleDateString('en-GB', { 
+    year: 'numeric', month: 'short', day: 'numeric' 
+  }), col1X, y, 75);
+
+  // Right column
+  y = detailsY;
+  y = addDetail('Number of Guests', String(booking.total_guests || 0), col2X, y, 75);
+  y += 10;
+  y = addDetail('Check-in Time', booking.check_in_time || 'Flexible', col2X, y, 75);
+  y += 10;
+  y = addDetail('Booking Date', new Date(booking.created_at).toLocaleDateString('en-GB', { 
+    year: 'numeric', month: 'short', day: 'numeric' 
+  }), col2X, y, 75);
+
+  // Special Requests Box (if exists)
+  let specialRequestsHeight = 0;
+  if (booking.special_requests) {
+    y = 194;
+    
+    const requestLines = doc.splitTextToSize(booking.special_requests, contentWidth - 10);
+    specialRequestsHeight = Math.min(requestLines.length * 4 + 16, 35);
+    
+    doc.setDrawColor(...borderColor);
+    doc.setLineWidth(1);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(margin, y, contentWidth, specialRequestsHeight, 3, 3, 'FD');
+
+    y += 7;
+    doc.setFontSize(8);
+    doc.setTextColor(...brandPrimary);
+    doc.setFont(undefined, 'bold');
+    doc.text('SPECIAL REQUESTS', margin + 5, y);
+
+    y += 5;
+    doc.setFontSize(8);
+    doc.setTextColor(...textPrimary);
+    doc.setFont(undefined, 'normal');
+    doc.text(requestLines, margin + 5, y);
+    
+    y = 194 + specialRequestsHeight + 8;
+  } else {
+    y = 194;
   }
 
-  // Payment Section - Clean and Prominent
-  y = 178;
-  
-  doc.setFillColor(249, 250, 251);
+  // Payment Summary Box - Prominent
+  doc.setFillColor(...brandPrimary);
   doc.setDrawColor(...brandPrimary);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(20, y, 170, 30, 3, 3, 'FD');
-
-  y += 10;
-  doc.setFontSize(10);
-  doc.setTextColor(...textSecondary);
-  doc.setFont(undefined, 'normal');
-  doc.text('TOTAL AMOUNT', 25, y);
-
-  doc.setFontSize(16);
-  doc.setTextColor(...brandPrimary);
-  doc.setFont(undefined, 'bold');
-  const amountText = 'Rs.' + booking.total_amount.toFixed(2);
-  doc.text(amountText, 185, y + 6, { align: 'right' });
-
-  doc.setFontSize(9);
-  doc.setTextColor(...textSecondary);
-  doc.setFont(undefined, 'normal');
-  doc.text('Payment Status: ' + (booking.booking_status?.charAt(0).toUpperCase() + booking.booking_status?.slice(1) || 'Pending'), 25, y + 14);
-
-  // Footer
-  y = 260;
-  doc.setDrawColor(...borderColor);
-  doc.setLineWidth(0.3);
-  doc.line(20, y, 190, y);
+  doc.setLineWidth(1);
+  doc.roundedRect(margin, y, contentWidth, 32, 3, 3, 'FD');
 
   y += 8;
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(undefined, 'normal');
+  doc.text('TOTAL AMOUNT', margin + 5, y);
+
+  y += 2;
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  const amountText = '₹' + booking.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  doc.text(amountText, pageWidth - margin - 5, y + 4, { align: 'right' });
+
+  y += 12;
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  const paymentStatus = booking.booking_status?.charAt(0).toUpperCase() + booking.booking_status?.slice(1) || 'Pending';
+  doc.text(`Payment Status: ${paymentStatus}`, margin + 5, y);
+
+  // Footer Section
+  y = 265;
+  doc.setDrawColor(...accentGold);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+
+  y += 5;
   doc.setFontSize(10);
   doc.setTextColor(...brandPrimary);
   doc.setFont(undefined, 'bold');
-  doc.text('Thank you for choosing Breezeand Grains', 105, y, { align: 'center' });
+  doc.text('Thank you for choosing Breezeand Grains', pageWidth / 2, y, { align: 'center' });
   
   y += 5;
   doc.setFontSize(8);
   doc.setTextColor(...textSecondary);
   doc.setFont(undefined, 'normal');
-  doc.text('hello@breezeandgrains.com  |  123 Breezeand Grains Street, Digital City', 105, y, { align: 'center' });
+  doc.text('hello@breezeandgrains.com  |  123 Breezeand Grains Street, Digital City', pageWidth / 2, y, { align: 'center' });
 
   y += 4;
   doc.setFontSize(7);
   doc.setFont(undefined, 'italic');
-  doc.text('This is a computer-generated receipt and does not require a signature.', 105, y, { align: 'center' });
+  doc.setTextColor(...textSecondary);
+  doc.text('This is a computer-generated receipt and does not require a signature.', pageWidth / 2, y, { align: 'center' });
 
   // Save the PDF
   doc.save(`breezeandgrains-receipt-${booking.id.substring(0, 8)}.pdf`);
