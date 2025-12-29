@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { guestReviewsApi } from "@/app/lib/apiClient";
+import { useRouter } from "next/navigation";
 
 const ReviewSection = () => {
+  const router = useRouter();
   const [currentReview, setCurrentReview] = useState(0);
   const [revealedChars, setRevealedChars] = useState(0);
   const [reviews, setReviews] = useState([]);
@@ -20,7 +22,22 @@ const ReviewSection = () => {
         const response = await guestReviewsApi.getAll({ limit: 10 });
         
         if (response.success) {
-          const fetchedReviews = response.data || [];
+          let fetchedReviews = response.data || [];
+          
+          // Assign random avatars to reviews without images
+          fetchedReviews = fetchedReviews.map(review => {
+            if (!review.image_url) {
+              const randomAvatarNum = Math.floor(Math.random() * 3);
+              // Use 'avatar.jpg' for 0, 'avatar2.jpg' for 1, 'avatar3.jpg' for 2
+              const avatarFileName = randomAvatarNum === 0 ? 'avatar.jpg' : `avatar${randomAvatarNum + 1}.jpg`;
+              return {
+                ...review,
+                fallbackAvatar: `/image/review/${avatarFileName}`
+              };
+            }
+            return review;
+          });
+          
           setReviews(fetchedReviews);
           
           // Calculate average rating
@@ -83,6 +100,17 @@ const ReviewSection = () => {
     setCurrentReview((prev) => (prev - 1 + reviews.length) % reviews.length);
   };
 
+  // Auto-slide functionality
+  useEffect(() => {
+    if (reviews.length <= 1) return; // Don't auto-slide if there's only one review
+    
+    const autoSlideInterval = setInterval(() => {
+      setCurrentReview((prev) => (prev + 1) % reviews.length);
+    }, 5000); // Auto-slide every 5 seconds
+    
+    return () => clearInterval(autoSlideInterval);
+  }, [reviews.length]);
+
   // Show loading state
   if (loading) {
     return (
@@ -136,7 +164,10 @@ const ReviewSection = () => {
           </h2>
 
           <div className="flex items-center">
-            <button className="bg-[#594B00] text-white px-4 md:px-5 py-2 text-sm font-normal hover:bg-[#594B00]/90 transition-colors rounded-l-md border-r border-[#594B00]">
+            <button 
+              onClick={() => router.push('/reviews')}
+              className="bg-[#594B00] text-white px-4 md:px-5 py-2 text-sm font-normal hover:bg-[#594B00]/90 transition-colors rounded-l-md border-r border-[#594B00]"
+            >
               View All
             </button>
             <div
@@ -185,7 +216,11 @@ const ReviewSection = () => {
                   className="w-9 h-9 md:w-10 md:h-10 bg-neutral-400 rounded-full flex-shrink-0 object-cover"
                 />
               ) : (
-                <div className="w-9 h-9 md:w-10 md:h-10 bg-neutral-400 rounded-full flex-shrink-0" />
+                <img 
+                  src={reviews[currentReview].fallbackAvatar} 
+                  alt="Default Avatar" 
+                  className="w-9 h-9 md:w-10 md:h-10 bg-neutral-400 rounded-full flex-shrink-0 object-cover"
+                />
               )}
               <div className="text-left">
                 <p className="text-xs md:text-sm font-medium text-neutral-800">

@@ -165,16 +165,22 @@ const Page = () => {
       </section>
 
       {/* ========================= LOCATION SECTION ========================= */}
-      <section className="w-[98%] mx-auto h-[400px] sm:h-[500px] mt-12 sm:mt-20 rounded-3xl overflow-hidden border-2 border-neutral-300">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3900.123456789!2d76.365!3d9.567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b082123456789%3A0xabcdef123456789!2sBreeze%20%26%20Grains!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen={true}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        ></iframe>
+      <section className="w-[98%] mx-auto h-[400px] sm:h-[500px] mt-12 sm:mt-20 rounded-3xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.15)] relative">
+        {/* Map container with professional styling */}
+        <div className="absolute inset-0 bg-[#173A00] rounded-3xl overflow-hidden">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3900.123456789!2d76.365!3d9.567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b082123456789%3A0xabcdef123456789!2sBreeze%20%26%20Grains!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen={true}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="rounded-3xl"
+          ></iframe>
+        </div>
+        {/* Subtle border effect */}
+        <div className="absolute inset-0 rounded-3xl border border-white/20 pointer-events-none"></div>
       </section>
 
     </main>

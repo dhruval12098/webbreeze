@@ -15,17 +15,17 @@ const TestimonialCard = ({ review, isFirstRow = false, isMobile = false, variant
   
   const bgColor = isFirstRow ? firstRowBg : secondRowBg;
   
-  // Use placeholder image if no image_url is provided
-  const imageUrl = review?.image_url || "";
+  // Use fallback avatar if no image_url is provided
+  const imageUrl = review?.image_url || review?.fallbackAvatar || "";
   
   return (
     <div
       className={`rounded-xl p-6 flex flex-col ${
         isMobile 
-          ? "min-w-full h-80" 
+          ? "min-w-full h-auto" 
           : variant === "wide" 
-            ? "flex-1 h-80" 
-            : "w-[40%] h-80"
+            ? "flex-1 h-auto" 
+            : "w-[40%] h-auto"
       }`}
       style={{ backgroundColor: bgColor }}
     >
@@ -54,18 +54,18 @@ const TestimonialCard = ({ review, isFirstRow = false, isMobile = false, variant
       </div>
 
       {/* Testimonial box */}
-      <div className="bg-white p-6 rounded-xl relative flex-1">
+      <div className="bg-white p-6 rounded-xl relative flex-1 flex flex-col">
         <BiSolidQuoteLeft
           className="absolute -top-3 left-4 text-gray-400"
           size={36}
           aria-hidden
         />
         {isFirstRow ? (
-          <p className="pt-4 text-sm leading-relaxed text-gray-800">
+          <p className="pt-4 text-sm leading-relaxed text-gray-800 flex-grow">
             {review.review_text}
           </p>
         ) : (
-          <p className="pt-4 text-sm leading-relaxed text-gray-800">
+          <p className="pt-4 text-sm leading-relaxed text-gray-800 flex-grow">
             {review.review_text}
           </p>
         )}
@@ -91,7 +91,23 @@ const CardTestimonial = () => {
         const response = await guestReviewsApi.getAll({ limit: 8 });
         
         if (response.success) {
-          setTestimonials(response.data || []);
+          let fetchedTestimonials = response.data || [];
+                
+          // Assign random avatars to testimonials without images
+          fetchedTestimonials = fetchedTestimonials.map(testimonial => {
+            if (!testimonial.image_url) {
+              const randomAvatarNum = Math.floor(Math.random() * 3);
+              // Use 'avatar.jpg' for 0, 'avatar2.jpg' for 1, 'avatar3.jpg' for 2
+              const avatarFileName = randomAvatarNum === 0 ? 'avatar.jpg' : `avatar${randomAvatarNum + 1}.jpg`;
+              return {
+                ...testimonial,
+                fallbackAvatar: `/image/review/${avatarFileName}`
+              };
+            }
+            return testimonial;
+          });
+                
+          setTestimonials(fetchedTestimonials);
         } else {
           setError(response.error || "Failed to fetch testimonials");
         }

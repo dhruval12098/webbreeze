@@ -285,36 +285,36 @@ export default function BoatHero() {
   /* ---- TEXT STAGES ---- */
   const textStages = [
     {
-      title: "Minimalism is not emptiness,",
+      title: "Breeze & Grains Homestay",
       subtitle:
-        "It's essence. A philosophy that strips away the unnecessary to reveal what truly matters.",
+        "Experience the perfect blend of comfort and nature in our serene lakeside retreat.",
     },
     {
-      title: "Welcome to Munsey Homestay",
+      title: "Where Nature Meets Comfort",
       subtitle:
-        "Where tranquility meets the water — an escape where nature becomes your rhythm.",
+        "Relax in our peaceful homestay surrounded by gentle breezes and tranquil waters.",
     },
     {
-      title: "Experience Serenity",
+      title: "Your Lakeside Sanctuary",
       subtitle:
-        "Every moment is designed to slow time and reconnect you to nature.",
+        "A perfect getaway where you can unwind and connect with nature's rhythm.",
     },
     {
-      title: "Floating in Peace",
-      subtitle: "Golden light, calm waters, and stillness in every direction.",
+      title: "Gentle Breezes & Grains",
+      subtitle: "Enjoy the calming atmosphere and authentic homestay experience by the water.",
     },
     {
-      title: "Your Lakeside Retreat",
-      subtitle: "Just 30 minutes by boat — yet worlds away from the ordinary.",
+      title: "Authentic Homestay Experience",
+      subtitle: "Warm hospitality and cozy accommodations in a beautiful natural setting.",
     },
     {
-      title: "Unwind in Nature",
-      subtitle: "Sunrises, reflections, and star-filled evenings await you.",
+      title: "Create Memories",
+      subtitle: "Book your stay at our charming homestay for an unforgettable lakeside experience.",
     },
     {
-      title: "Book Your Escape",
+      title: "Book Your Stay",
       subtitle:
-        "Limited rooms available for those seeking authentic tranquility.",
+        "Reserve your peaceful retreat at Breeze & Grains Homestay today.",
     },
   ];
 
