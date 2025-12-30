@@ -126,7 +126,13 @@ const StepOne = ({ goToStep }) => {
     
     if (storedRoomData) {
       const room = JSON.parse(storedRoomData);
-      roomPrice = parseFloat(room.price) || 9900;
+      // Parse price properly - handle both string and number formats
+      if (typeof room.price === 'string') {
+        // Remove any commas and convert to number
+        roomPrice = parseFloat(room.price.replace(/,/g, '')) || 9900;
+      } else {
+        roomPrice = parseFloat(room.price) || 9900;
+      }
     }
     
     const nights = calculateNights();
@@ -354,7 +360,7 @@ const StepOne = ({ goToStep }) => {
               className="mt-4 text-xs text-[#594B00] font-sans text-center md:text-left"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
-              *Choose your stay dates. Entire homestay is ₹9,900 per night.*
+              *Choose your stay dates. Price per night varies by room type.*
             </p>
             
             {/* Display calculated nights and total */}

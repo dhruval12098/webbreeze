@@ -20,19 +20,25 @@ const Page = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
+        // Clear any existing selected room data to ensure fresh data is used
+        sessionStorage.removeItem('selectedRoom');
+        
         const { data, error } = await supabase
           .from('rooms')
           .select('*')
           .limit(1);
 
         if (data && data.length > 0) {
-          setRoomData(data[0]);
+          // Format the price to ensure it's properly displayed
+          const room = data[0];
+          room.price = parseFloat(room.price) || room.price;
+          setRoomData(room);
         } else {
           // Fallback to static data if no data in database
           setRoomData({
             title: "Deluxe Room",
             label: "Entire Homestay",
-            price: "19,000",
+            price: 19000, // Use number instead of string
             description: "Your peaceful Kerala retreat by the backwaters of Alappuzha. Experience tranquility and comfort in our beautifully designed deluxe room with stunning views.",
             image1_url: '/image/image8.jpg',
             image2_url: '/image/image1.jpg',
@@ -47,7 +53,7 @@ const Page = () => {
         setRoomData({
           title: "Deluxe Room",
           label: "Entire Homestay",
-          price: "19,000",
+          price: 19000, // Use number instead of string
           description: "Your peaceful Kerala retreat by the backwaters of Alappuzha. Experience tranquility and comfort in our beautifully designed deluxe room with stunning views.",
           image1_url: '/image/image8.jpg',
           image2_url: '/image/image1.jpg',
@@ -174,7 +180,7 @@ const Page = () => {
 
               {/* Price */}
               <div className="flex items-center gap-3 mt-6">
-                <p className="text-3xl font-semibold" style={{ color: "#594B00" }}>₹{roomData?.price || "19,000"}/-</p>
+                <p className="text-3xl font-semibold" style={{ color: "#594B00" }}>₹{typeof roomData?.price === 'number' ? roomData.price.toLocaleString() : roomData?.price || "19,000"}/-</p>
                 <span className="px-3 py-1 bg-[#594B00] text-white text-xs rounded-full">
                   {roomData?.label || "Entire Homestay"}
                 </span>
@@ -361,7 +367,7 @@ const Page = () => {
 
             {/* Price */}
             <div className="flex items-center gap-3 mt-6">
-              <p className="text-3xl font-semibold" style={{ color: "#594B00" }}>₹{roomData?.price || "19,000"}/-</p>
+              <p className="text-3xl font-semibold" style={{ color: "#594B00" }}>₹{typeof roomData?.price === 'number' ? roomData.price.toLocaleString() : roomData?.price || "19,000"}/-</p>
               <span className="px-3 py-1 bg-[#594B00] text-white text-xs rounded-full">
                 {roomData?.label || "Entire Homestay"}
               </span>

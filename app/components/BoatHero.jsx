@@ -315,6 +315,7 @@ export default function BoatHero() {
       title: "Book Your Stay",
       subtitle:
         "Reserve your peaceful retreat at Breeze & Grains Homestay today.",
+        
     },
   ];
 

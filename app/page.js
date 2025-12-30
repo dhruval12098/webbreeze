@@ -83,7 +83,7 @@ const Hero = () => {
 
         {/* BUTTONS */}
         <div className="flex gap-4 mt-6 flex-wrap">
-          <Link href="/booking" className="px-6 py-2.5 rounded-full bg-white text-black flex items-center gap-2 text-sm hover:bg-gray-200 transition">
+          <Link href="/room" className="px-6 py-2.5 rounded-full bg-white text-black flex items-center gap-2 text-sm hover:bg-gray-200 transition">
             Book Now <ArrowUpRight size={16} />
           </Link>
 
