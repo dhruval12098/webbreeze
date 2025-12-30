@@ -66,7 +66,7 @@ const BookingHistory = () => {
   if (bookings.length === 0) {
     return (
       <div className="p-4 sm:p-6">
-        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4" style={{ color: "#594B00" }}>Your Booking History</h3>
+        <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4" style={{ color: "#173A00" }}>Your Booking History</h3>
         <p className="text-sm sm:text-base">You haven't made any bookings yet.</p>
       </div>
     );
@@ -74,7 +74,7 @@ const BookingHistory = () => {
 
   return (
     <div className="p-4 sm:p-6">
-      <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4" style={{ color: "#594B00" }}>Your Booking History</h3>
+      <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4" style={{ color: "#173A00" }}>Your Booking History</h3>
       <div className="space-y-4">
         {bookings.map((booking) => (
           <div 
@@ -86,16 +86,16 @@ const BookingHistory = () => {
                 <h4 className="font-medium text-base" style={{ color: "#173A00" }}>
                   Booking #{booking.id.substring(0, 8)}
                 </h4>
-                <p className="text-xs sm:text-sm mt-1" style={{ color: "#594B00" }}>
+                <p className="text-xs sm:text-sm mt-1" style={{ color: "#173A00" }}>
                   <span className="font-medium">Check-in:</span> {new Date(booking.check_in_date).toLocaleDateString('en-GB')}
                 </p>
-                <p className="text-xs sm:text-sm" style={{ color: "#594B00" }}>
+                <p className="text-xs sm:text-sm" style={{ color: "#173A00" }}>
                   <span className="font-medium">Check-out:</span> {new Date(booking.check_out_date).toLocaleDateString('en-GB')} at 10:00 AM
                 </p>
-                <p className="text-xs sm:text-sm" style={{ color: "#594B00" }}>
+                <p className="text-xs sm:text-sm" style={{ color: "#173A00" }}>
                   <span className="font-medium">Guests:</span> {booking.total_guests}
                 </p>
-                <p className="text-xs sm:text-sm" style={{ color: "#594B00" }}>
+                <p className="text-xs sm:text-sm" style={{ color: "#173A00" }}>
                   <span className="font-medium">Total:</span> ₹{booking.total_amount.toFixed(2)}/-
                 </p>
                 <p className="text-xs sm:text-sm font-medium" style={{ 
@@ -123,7 +123,7 @@ const BookingHistory = () => {
             </div>
             {booking.special_requests && (
               <div className="mt-2 pt-2 border-t border-gray-200">
-                <p className="text-xs sm:text-sm" style={{ color: "#594B00" }}>
+                <p className="text-xs sm:text-sm" style={{ color: "#173A00" }}>
                   <span className="font-medium">Special Requests:</span> {booking.special_requests}
                 </p>
               </div>

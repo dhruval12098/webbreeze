@@ -105,7 +105,7 @@ const StepTwo = ({ goToStep }) => {
           {/* TITLE */}
           <h2 
             className="text-2xl md:text-3xl font-serif text-center mb-6 md:mb-8"
-            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#594B00" }}
+            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#173A00" }}
           >
             Guest Details
           </h2>
@@ -116,7 +116,7 @@ const StepTwo = ({ goToStep }) => {
             <div className="mb-5">
               <label 
                 className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 *Full Name
               </label>
@@ -127,7 +127,7 @@ const StepTwo = ({ goToStep }) => {
                 onChange={handleChange}
                 placeholder="Name"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               />
             </div>
 
@@ -135,7 +135,7 @@ const StepTwo = ({ goToStep }) => {
             <div className="mb-5">
               <label 
                 className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 *Email Address
               </label>
@@ -146,7 +146,7 @@ const StepTwo = ({ goToStep }) => {
                 onChange={handleChange}
                 placeholder="Email"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               />
             </div>
 
@@ -154,7 +154,7 @@ const StepTwo = ({ goToStep }) => {
             <div className="mb-5">
               <label 
                 className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 *Phone Number
               </label>
@@ -165,7 +165,7 @@ const StepTwo = ({ goToStep }) => {
                 onChange={handleChange}
                 placeholder="Phone"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               />
             </div>
 
@@ -173,7 +173,7 @@ const StepTwo = ({ goToStep }) => {
             <div className="mb-5">
               <label 
                 className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 Number of Guests
               </label>
@@ -185,7 +185,7 @@ const StepTwo = ({ goToStep }) => {
                 min="1"
                 placeholder="0"
                 className="w-full bg-[#FFFBE6] p-3 rounded-full font-sans outline-none mt-1 border border-[#594B00]/30"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               />
             </div>
 
@@ -193,7 +193,7 @@ const StepTwo = ({ goToStep }) => {
             <div className="mb-5">
               <label 
                 className="font-sans text-sm"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 Special Requests
               </label>
@@ -203,7 +203,7 @@ const StepTwo = ({ goToStep }) => {
                 onChange={handleChange}
                 placeholder="Add Your Special Request here"
                 className="w-full bg-[#FFFBE6] p-3 rounded-xl font-sans outline-none mt-1 min-h-[120px] border border-[#594B00]/30"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               ></textarea>
             </div>
 

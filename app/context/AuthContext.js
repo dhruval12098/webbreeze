@@ -31,14 +31,29 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Verify token with backend
-      const response = await fetch('/api/auth/verify-session', {
+      // First try regular user session
+      let response = await fetch('/api/auth/verify-session', {
         headers: {
           'Authorization': `Bearer ${storedToken}`
         }
       });
 
-      const data = await response.json();
+      let data = await response.json();
+
+      // If user session fails, try admin session
+      if (!data.success) {
+        response = await fetch('/api/admin/verify-session', {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`
+          }
+        });
+        data = await response.json();
+        
+        // If admin session is valid, add admin flag
+        if (data.success) {
+          data.user = { ...data.admin, isAdmin: true };
+        }
+      }
 
       if (data.success) {
         // Session is valid
@@ -70,14 +85,27 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Optional: Call logout API to invalidate session in database
+      // Check if user is an admin to call appropriate logout API
       if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        let response;
+        
+        // Try admin logout first if user is an admin
+        if (user && user.isAdmin) {
+          response = await fetch('/api/admin/logout', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } else {
+          // Otherwise try regular user logout
+          response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Logout error:', error);

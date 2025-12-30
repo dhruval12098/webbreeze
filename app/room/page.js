@@ -15,7 +15,6 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [selectedAmenity, setSelectedAmenity] = useState(null);
   const [showAmenityModal, setShowAmenityModal] = useState(false);
-  const calendarRef = useRef(null);
 
   // Fetch room data from Supabase
   useEffect(() => {
@@ -103,16 +102,7 @@ const Page = () => {
   }, [images.length]);
 
   // Close calendar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
-        setShowCalendar(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Removed for modal implementation
 
   const handleCalendarIconClick = () => {
     setShowCalendar(!showCalendar);
@@ -194,7 +184,7 @@ const Page = () => {
               <div className="mt-7 space-y-3">
                 <div className="w-full md:w-[340px] space-y-4">
                   {/* CHECK AVAILABILITY */}
-                  <div className="relative" ref={calendarRef}>
+                  <div className="relative">
                     <button
                       className="w-full bg-[#594B00] text-white py-4 rounded-full flex justify-between items-center px-6 text-sm"
                       style={{ fontFamily: "Plus Jakarta Sans" }}
@@ -205,18 +195,6 @@ const Page = () => {
                         <Calendar className="w-4 h-4" />
                       </div>
                     </button>
-                    
-                    {showCalendar && (
-                      <div className="absolute top-full left-0 right-0 mt-2 z-10" ref={calendarRef}>
-                        <CalendarComponent 
-                          roomId={roomData?.id}
-                          onDateSelect={(date) => {
-                            console.log("Selected date:", date);
-                            setShowCalendar(false);
-                          }}
-                        />
-                      </div>
-                    )}
                   </div>
 
                   {/* BOOK NOW */}
@@ -392,7 +370,7 @@ const Page = () => {
             {/* Buttons */}
             <div className="mt-7 space-y-4">
               {/* CHECK AVAILABILITY */}
-              <div className="relative" ref={calendarRef}>
+              <div className="relative">
                 <button
                   className="w-full bg-[#594B00] text-white py-4 rounded-full flex justify-between items-center px-6 text-sm"
                   style={{ fontFamily: "Plus Jakarta Sans" }}
@@ -403,18 +381,6 @@ const Page = () => {
                     <Calendar className="w-4 h-4" />
                   </div>
                 </button>
-                
-                {showCalendar && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-10" ref={calendarRef}>
-                    <CalendarComponent 
-                      roomId={roomData?.id}
-                      onDateSelect={(date) => {
-                        console.log("Selected date:", date);
-                        setShowCalendar(false);
-                      }}
-                    />
-                  </div>
-                )}
               </div>
 
               {/* BOOK NOW */}
@@ -575,6 +541,26 @@ const Page = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {showCalendar && (
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setShowCalendar(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <CalendarComponent 
+              roomId={roomData?.id}
+              onDateSelect={(date) => {
+                console.log("Selected date:", date);
+                setShowCalendar(false);
+              }}
+            />
+            <button 
+              onClick={() => setShowCalendar(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}

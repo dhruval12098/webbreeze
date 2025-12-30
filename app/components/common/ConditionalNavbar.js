@@ -7,7 +7,7 @@ import Navbar from './Navbar';
 export default function ConditionalNavbar() {
   const pathname = usePathname();
   const { token } = useAuth();
-  const isAdminRoute = pathname.includes('/secure-portal-z8q1k4f9d0');
+  const isAdminRoute = pathname.includes('/secure-portal-z8q1k4f9d0') || pathname.includes('/admin-login');
   
   if (isAdminRoute) {
     return null;

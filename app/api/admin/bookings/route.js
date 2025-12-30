@@ -16,9 +16,9 @@ export async function GET(request) {
     
     // Verify the session token
     const { data: session, error: sessionError } = await supabase
-      .from('user_sessions')
-      .select('user_id, expires_at')
-      .eq('token', token)
+      .from('admin_sessions')
+      .select('admin_id, expires_at')
+      .eq('session_token', token)
       .single();
 
     if (sessionError || !session) {
@@ -34,9 +34,9 @@ export async function GET(request) {
     if (now > expiresAt) {
       // Delete expired session
       await supabase
-        .from('user_sessions')
+        .from('admin_sessions')
         .delete()
-        .eq('token', token);
+        .eq('session_token', token);
 
       return new Response(
         JSON.stringify({ success: false, error: 'Session has expired' }),
@@ -136,9 +136,9 @@ export async function PUT(request, { params }) {
     
     // Verify the session token
     const { data: session, error: sessionError } = await supabase
-      .from('user_sessions')
-      .select('user_id, expires_at')
-      .eq('token', token)
+      .from('admin_sessions')
+      .select('admin_id, expires_at')
+      .eq('session_token', token)
       .single();
 
     if (sessionError || !session) {
@@ -154,9 +154,9 @@ export async function PUT(request, { params }) {
     if (now > expiresAt) {
       // Delete expired session
       await supabase
-        .from('user_sessions')
+        .from('admin_sessions')
         .delete()
-        .eq('token', token);
+        .eq('session_token', token);
 
       return new Response(
         JSON.stringify({ success: false, error: 'Session has expired' }),

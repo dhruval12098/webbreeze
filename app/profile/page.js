@@ -73,10 +73,10 @@ const Page = () => {
   // Show loading while either auth or profile data is loading
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-plus-jakarta-sans">
+      <div className="min-h-screen bg-white flex items-center justify-center font-plus-jakarta-sans">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-700">Loading your profile...</p>
+          <p className="text-black">Loading your profile...</p>
         </div>
       </div>
     );
@@ -84,7 +84,7 @@ const Page = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-plus-jakarta-sans">
+      <div className="min-h-screen bg-white flex items-center justify-center font-plus-jakarta-sans">
         <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
           <p className="text-red-600 mb-4">Error: {error}</p>
           <button 

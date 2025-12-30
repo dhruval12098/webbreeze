@@ -184,3 +184,14 @@ export const imageApi = {
   delete: (imageUrl) => apiCall('/api/images/delete', 'DELETE', { imageUrl })
   // Note: Image upload is more complex and typically handled directly in components
 };
+
+/**
+ * Admin Metrics API functions
+ */
+export const adminMetricsApi = {
+  // Get dashboard metrics for admin
+  getMetrics: (token) => {
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    return apiCall('/api/admin/metrics', 'GET', null, headers);
+  }
+};

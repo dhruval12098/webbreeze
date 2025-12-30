@@ -125,7 +125,7 @@ const StepThree = ({ goToStep }) => {
           {/* TITLE */}
           <h2 
             className="text-2xl md:text-3xl font-serif text-center mb-6 md:mb-8"
-            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#594B00" }}
+            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#173A00" }}
           >
             Booking Summary
           </h2>
@@ -136,7 +136,7 @@ const StepThree = ({ goToStep }) => {
             <div className="mb-6">
               <span 
                 className="text-xs bg-[#FFFBE6] px-2 py-1 rounded font-sans uppercase"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 Stay Details
               </span>
@@ -164,7 +164,7 @@ const StepThree = ({ goToStep }) => {
             <div>
               <span 
                 className="text-xs bg-[#FFFBE6] px-2 py-1 rounded font-sans uppercase"
-                style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
               >
                 Payment Details
               </span>
@@ -193,7 +193,7 @@ const StepThree = ({ goToStep }) => {
               <div className="mt-6">
                 <span 
                   className="text-xs bg-[#FFFBE6] px-2 py-1 rounded font-sans uppercase"
-                  style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+                  style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
                 >
                   Special Requests
                 </span>
@@ -220,7 +220,7 @@ const StepThree = ({ goToStep }) => {
 
             {/* FOOTNOTE */}
             <p 
-              className="mt-4 text-xs text-[#594B00] font-sans text-center"
+              className="mt-4 text-xs text-[#173A00] font-sans text-center"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
               *Your booking will be confirmed upon successful payment.*

@@ -1,8 +1,39 @@
 "use client";
-import React from "react";
-import { Search, Bell } from "lucide-react";
+import React, { useState } from "react";
+import { Search, Bell, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
 
 const Header = () => {
+  const router = useRouter();
+  const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      // Call admin logout API
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        await fetch("/api/admin/logout", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+      }
+      
+      // Clear auth data and redirect
+      await logout();
+      router.push("/admin-login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <header className="w-full bg-white border-b border-neutral-200 flex items-center justify-between px-6 py-4">
       
@@ -34,14 +65,24 @@ const Header = () => {
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
         </button>
 
-        {/* Profile Image */}
-        <div className="w-10 h-10 rounded-full bg-neutral-300 overflow-hidden cursor-pointer">
-          {/* Placeholder avatar */}
-          <img 
-            src="https://via.placeholder.com/100" 
-            alt="profile"
-            className="w-full h-full object-cover" 
-          />
+        {/* Profile Image and Logout */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-neutral-300 overflow-hidden cursor-pointer">
+            {/* Placeholder avatar */}
+            <img 
+              src="https://via.placeholder.com/100" 
+              alt="profile"
+              className="w-full h-full object-cover" 
+            />
+          </div>
+          <button 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="p-2 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-600 disabled:opacity-50"
+            title="Logout"
+          >
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
 

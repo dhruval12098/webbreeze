@@ -3,9 +3,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
   const today = new Date();
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
-  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [bookedDates, setBookedDates] = useState([]);
+  
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
   
   // Fetch booked dates for the current room
   useEffect(() => {
@@ -116,21 +118,23 @@ const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
   };
 
   const nextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear((prev) => prev + 1);
-    } else setCurrentMonth((prev) => prev + 1);
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
   };
 
   const prevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear((prev) => prev - 1);
-    } else setCurrentMonth((prev) => prev - 1);
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto p-4 bg-white rounded-2xl shadow-lg border border-gray-100" onClick={(e) => e.stopPropagation()}>
+    <div className="w-[95vw] max-w-sm mx-auto p-2 sm:p-4 bg-white rounded-2xl shadow-lg border border-gray-100" onClick={(e) => e.stopPropagation()}>
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
@@ -160,7 +164,7 @@ const Calendar = ({ selectedDate, onDateSelect, roomId }) => {
       </div>
 
       {/* Week Days */}
-      <div className="grid grid-cols-7 text-center text-xs text-gray-600 mb-2">
+      <div className="grid grid-cols-7 text-center text-xs text-gray-900 mb-2">
         <span>Sun</span>
         <span>Mon</span>
         <span>Tue</span>

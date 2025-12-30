@@ -51,12 +51,6 @@ const StepOne = ({ goToStep }) => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (checkInRef.current && !checkInRef.current.contains(event.target)) {
-        setShowCheckInCalendar(false);
-      }
-      if (checkOutRef.current && !checkOutRef.current.contains(event.target)) {
-        setShowCheckOutCalendar(false);
-      }
       if (timeRef.current && !timeRef.current.contains(event.target)) {
         setShowTimePicker(false);
       }
@@ -202,7 +196,7 @@ const StepOne = ({ goToStep }) => {
           {/* TITLE */}
           <h2 
             className="text-2xl md:text-3xl font-serif text-center mb-6 md:mb-8"
-            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#594B00" }}
+            style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#173A00" }}
           >
             Select Your Check-in Date <br /> & Time
           </h2>
@@ -212,7 +206,7 @@ const StepOne = ({ goToStep }) => {
             {/* Check-in Date */}
             <label 
               className="font-sans text-sm"
-              style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+              style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
             >
               *Select Check-In Date
             </label>
@@ -222,21 +216,29 @@ const StepOne = ({ goToStep }) => {
                 style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={() => setShowCheckInCalendar(!showCheckInCalendar)}
               >
-                <span style={{ color: "#594B00" }}>{checkInDate ? new Date(checkInDate).toLocaleDateString('en-GB') : "Select date"}</span>
-                <AiOutlineCalendar className="text-[#594B00]" size={20} />
+                <span style={{ color: "#173A00" }}>{checkInDate ? new Date(checkInDate).toLocaleDateString('en-GB') : "Select date"}</span>
+                <AiOutlineCalendar className="text-[#173A00]" size={20} />
               </div>
               
-              {/* Calendar Dropdown */}
+              {/* Calendar Modal */}
               {showCheckInCalendar && (
-                <div className="absolute top-full left-0 mt-2 z-10 w-full md:w-auto">
-                  <Calendar 
-                    selectedDate={checkInDate}
-                    roomId={bookingData?.room_id}
-                    onDateSelect={(date) => {
-                      setCheckInDate(date);
-                      setShowCheckInCalendar(false);
-                    }}
-                  />
+                <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setShowCheckInCalendar(false)}>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Calendar 
+                      selectedDate={checkInDate}
+                      roomId={bookingData?.room_id}
+                      onDateSelect={(date) => {
+                        setCheckInDate(date);
+                        setShowCheckInCalendar(false);
+                      }}
+                    />
+                    <button 
+                      onClick={() => setShowCheckInCalendar(false)}
+                      className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -244,7 +246,7 @@ const StepOne = ({ goToStep }) => {
             {/* Check-out Date */}
             <label 
               className="font-sans text-sm mt-4 block"
-              style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+              style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
             >
               *Select Check-Out Date
             </label>
@@ -254,21 +256,29 @@ const StepOne = ({ goToStep }) => {
                 style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={checkInDate ? () => setShowCheckOutCalendar(!showCheckOutCalendar) : undefined}
               >
-                <span style={{ color: "#594B00" }}>{checkOutDate ? new Date(checkOutDate).toLocaleDateString('en-GB') : "Select date"}</span>
-                <AiOutlineCalendar className="text-[#594B00]" size={20} />
+                <span style={{ color: "#173A00" }}>{checkOutDate ? new Date(checkOutDate).toLocaleDateString('en-GB') : "Select date"}</span>
+                <AiOutlineCalendar className="text-[#173A00]" size={20} />
               </div>
               
-              {/* Calendar Dropdown */}
+              {/* Calendar Modal */}
               {showCheckOutCalendar && (
-                <div className="absolute top-full left-0 mt-2 z-10 w-full md:w-auto">
-                  <Calendar 
-                    selectedDate={checkOutDate}
-                    roomId={bookingData?.room_id}
-                    onDateSelect={(date) => {
-                      setCheckOutDate(date);
-                      setShowCheckOutCalendar(false);
-                    }}
-                  />
+                <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setShowCheckOutCalendar(false)}>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Calendar 
+                      selectedDate={checkOutDate}
+                      roomId={bookingData?.room_id}
+                      onDateSelect={(date) => {
+                        setCheckOutDate(date);
+                        setShowCheckOutCalendar(false);
+                      }}
+                    />
+                    <button 
+                      onClick={() => setShowCheckOutCalendar(false)}
+                      className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -276,7 +286,7 @@ const StepOne = ({ goToStep }) => {
             {/* Check-in Time */}
             <label 
               className="font-sans text-sm mt-4 block"
-              style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
+              style={{ fontFamily: "Plus Jakarta Sans", color: "#173A00" }}
             >
               *Preferred Check-In Time
             </label>
@@ -286,8 +296,8 @@ const StepOne = ({ goToStep }) => {
                 style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={() => setShowTimePicker(!showTimePicker)}
               >
-                <span style={{ color: "#594B00" }}>{formatTime(checkInTime)}</span>
-                <AiOutlineClockCircle className="text-[#594B00]" size={20} />
+                <span style={{ color: "#173A00" }}>{formatTime(checkInTime)}</span>
+                <AiOutlineClockCircle className="text-[#173A00]" size={20} />
               </div>
               
               {/* Time Picker Dropdown */}
