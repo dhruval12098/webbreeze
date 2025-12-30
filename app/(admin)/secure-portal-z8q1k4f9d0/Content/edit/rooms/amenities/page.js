@@ -17,6 +17,8 @@ const RoomAmenitiesEditPage = () => {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [amenityToDelete, setAmenityToDelete] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load existing amenities from API
   useEffect(() => {
@@ -213,6 +215,7 @@ const RoomAmenitiesEditPage = () => {
   // Confirm amenity deletion
   const confirmDelete = async () => {
     if (amenityToDelete) {
+      setIsDeleting(true);
       try {
         // Delete icon from storage if present
         if (amenityToDelete.icon && amenityToDelete.icon.url) {
@@ -237,6 +240,8 @@ const RoomAmenitiesEditPage = () => {
       } catch (error) {
         console.error('Error deleting amenity:', error);
         showToast('Error deleting amenity: ' + error.message, 'error');
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
@@ -257,9 +262,8 @@ const RoomAmenitiesEditPage = () => {
 
   // Confirm save action - now actually saves all amenities
   const confirmSave = async () => {
+    setIsSaving(true);
     setShowSaveDialog(false);
-    // Show toast notification immediately
-    showToast('Saving changes...', 'success');
     
     try {
       // In this implementation, amenities are saved individually when added
@@ -283,6 +287,8 @@ const RoomAmenitiesEditPage = () => {
     } catch (error) {
       console.error('Error refreshing amenities:', error);
       showToast('Error saving changes: ' + error.message, 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -468,7 +474,15 @@ const RoomAmenitiesEditPage = () => {
         onConfirm={confirmSave}
         title="Save Changes"
         message="Are you sure you want to save these changes to the amenities?"
-        confirmText="Save Changes"
+        confirmText={isSaving ? (
+          <span className="flex items-center justify-center">
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Saving...
+          </span>
+        ) : "Save Changes"}
         cancelText="Cancel"
         type="info"
       />
@@ -480,7 +494,15 @@ const RoomAmenitiesEditPage = () => {
         onConfirm={confirmDelete}
         title="Delete Amenity"
         message="Are you sure you want to delete this amenity? This action cannot be undone."
-        confirmText="Delete"
+        confirmText={isDeleting ? (
+          <span className="flex items-center justify-center">
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Deleting...
+          </span>
+        ) : "Delete"}
         cancelText="Cancel"
         type="danger"
       />

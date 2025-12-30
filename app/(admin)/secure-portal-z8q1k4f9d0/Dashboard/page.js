@@ -126,7 +126,7 @@ const DashboardPage = () => {
             Recent Bookings
           </h2>
 
-          <table className="w-full text-sm">
+          <table className="w-full text-xs">
             <thead>
               <tr className="text-left text-[#0A3D2E99] border-b">
                 <th className="pb-3">Customer</th>
@@ -139,8 +139,8 @@ const DashboardPage = () => {
               {Array.isArray(metrics.recentBookings) && metrics.recentBookings.length > 0 ? (
                 metrics.recentBookings.map((booking) => (
                   <tr key={booking.id} className="border-b hover:bg-[#0A3D2E08] transition">
-                    <td className="py-3">{booking.user_name}</td>
-                    <td>{booking.check_in_date} - {booking.check_out_date}</td>
+                    <td className="py-2 px-3 text-xs">{booking.user_name}</td>
+                    <td className="text-xs">{booking.check_in_date} - {booking.check_out_date}</td>
                     <td className="font-medium text-[#0A3D2E]">
                       <span className={`px-3 py-1 rounded-full text-xs ${
                         booking.booking_status === 'Confirmed' ? 'bg-[#E8F6EF] text-[#0A3D2E] border-[#9FD9C3]' :

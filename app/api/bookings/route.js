@@ -48,7 +48,10 @@ export async function GET(request) {
     
     const { data, error } = await supabase
       .from('bookings')
-      .select('*')
+      .select(`
+        *,
+        rooms (title)
+      `)
       .eq('user_id', userId);
 
     if (error) {
@@ -84,6 +87,7 @@ export async function GET(request) {
       
       return {
         ...booking,
+        room_name: booking.rooms?.title || booking.room_id, // Use room title if available, otherwise use room_id
         check_in_time: displayTime
       };
     });

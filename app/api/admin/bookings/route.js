@@ -53,7 +53,8 @@ export async function GET(request) {
       .from('bookings')
       .select(`
         *,
-        users (name, email)
+        users (name, email),
+        rooms (title)
       `)
       .order('created_at', { ascending: false });
 
@@ -92,6 +93,7 @@ export async function GET(request) {
         id: booking.id,
         user_id: booking.user_id,
         room_id: booking.room_id,
+        room_name: booking.rooms?.title || booking.room_id, // Use room title if available, otherwise use room_id
         user_name: booking.users?.name || 'Unknown User',
         user_email: booking.users?.email || 'N/A',
         check_in_date: booking.check_in_date,
@@ -99,8 +101,12 @@ export async function GET(request) {
         check_in_time: displayTime,
         total_guests: booking.total_guests,
         special_requests: booking.special_requests,
+        phone: booking.phone,
         total_amount: booking.total_amount,
         booking_status: booking.booking_status,
+        razorpay_order_id: booking.razorpay_order_id,
+        transaction_id: booking.transaction_id,
+        payment_status: booking.payment_status,
         created_at: booking.created_at,
         updated_at: booking.updated_at
       };
@@ -121,7 +127,7 @@ export async function GET(request) {
 // PUT /api/admin/bookings/[id] - Update a booking (for admin)
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const bookingData = await request.json();
     
     const authHeader = request.headers.get('authorization');
@@ -165,12 +171,17 @@ export async function PUT(request, { params }) {
     }
 
     // Update the booking
+    // Handle field name mapping for status
+    const updateData = { ...bookingData, updated_at: new Date().toISOString() };
+    // Map 'status' field to 'booking_status' if present
+    if (updateData.status && !updateData.booking_status) {
+      updateData.booking_status = updateData.status;
+      delete updateData.status; // Remove the old field
+    }
+    
     const { data, error } = await supabase
       .from('bookings')
-      .update({ 
-        ...bookingData, 
-        updated_at: new Date().toISOString() 
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

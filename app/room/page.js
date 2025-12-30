@@ -199,7 +199,7 @@ const Page = () => {
 
                   {/* BOOK NOW */}
                   <button
-                    className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent"
+                    className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent hover:bg-[#F9F6F0] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                     style={{ fontFamily: "Plus Jakarta Sans" }}
                     onClick={() => {
                       // Store room data in sessionStorage before navigating
@@ -385,7 +385,7 @@ const Page = () => {
 
               {/* BOOK NOW */}
               <button
-                className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent"
+                className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent hover:bg-[#F9F6F0] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                 style={{ fontFamily: "Plus Jakarta Sans" }}
                 onClick={() => {
                   // Store room data in sessionStorage before navigating

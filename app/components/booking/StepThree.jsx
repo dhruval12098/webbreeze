@@ -7,7 +7,16 @@ import { useAuth } from "@/app/context/AuthContext";
 const StepThree = ({ goToStep }) => {
   const [bookingData, setBookingData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const { user, token, isAuthenticated, loading } = useAuth();
+  
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -28,6 +37,13 @@ const StepThree = ({ goToStep }) => {
     if (storedBookingData) {
       setBookingData(JSON.parse(storedBookingData));
     }
+  }, []);
+  
+  // Cleanup: Reset payment processing state when component unmounts
+  useEffect(() => {
+    return () => {
+      setIsPaymentProcessing(false);
+    };
   }, []);
 
   const handleBookingSubmit = async () => {
@@ -64,37 +80,113 @@ const StepThree = ({ goToStep }) => {
     }
 
     try {
-      const response = await fetch('/api/bookings', {
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/payments/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          room_id: bookingData.room_id,
-          check_in_date: bookingData.checkInDate,
-          check_out_date: bookingData.checkOutDate,
-          check_in_time: checkInTime24,
-          total_guests: bookingData.totalGuests || 1,
-          special_requests: bookingData.specialRequests || '',
-          total_amount: bookingData.totalAmount,
-          booking_status: 'confirmed'
-        })
+        body: JSON.stringify({ amount: bookingData.totalAmount }),
       });
 
-      const result = await response.json();
+      const orderData = await orderResponse.json();
 
-      if (result.success) {
-        // Update booking data in sessionStorage with the saved booking from the API
-        sessionStorage.setItem('bookingData', JSON.stringify(result.data));
-        // Move to confirmation step
-        goToStep(4);
-      } else {
-        alert(`Booking failed: ${result.error}`);
+      if (!orderData.orderId) {
+        alert('Failed to create payment order. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
+
+      // Razorpay options
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.orderId,
+        name: 'Breeze and Grains',
+        description: 'Room Booking Payment',
+        handler: async function (response) {
+          // Set payment processing state to show loading screen
+          setIsPaymentProcessing(true);
+          
+          // On payment success, submit booking
+          try {
+            const bookingResponse = await fetch('/api/bookings', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                room_id: bookingData.room_id,
+                check_in_date: bookingData.checkInDate,
+                check_out_date: bookingData.checkOutDate,
+                check_in_time: checkInTime24,
+                total_guests: bookingData.totalGuests || 1,
+                special_requests: bookingData.specialRequests || '',
+                phone: bookingData.phone || '',
+                total_amount: bookingData.totalAmount,
+                booking_status: 'confirmed',
+                razorpay_order_id: response.razorpay_order_id,
+                transaction_id: response.razorpay_payment_id,
+                payment_status: 'paid'
+              })
+            });
+
+            const result = await bookingResponse.json();
+
+            if (result.success) {
+              sessionStorage.setItem('bookingData', JSON.stringify(result.data));
+              
+              // Send confirmation emails
+              try {
+                await fetch('/api/send-booking-emails', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ booking_id: result.data.id }),
+                });
+              } catch (emailError) {
+                console.error('Email sending failed:', emailError);
+                // Don't block the flow if email fails
+              }
+              
+              goToStep(4);
+            } else {
+              alert(`Booking failed: ${result.error}`);
+              setIsPaymentProcessing(false); // Reset loading state on failure
+            }
+          } catch (error) {
+            console.error('Booking submission error:', error);
+            alert('An error occurred while confirming your booking. Please contact support.');
+            setIsPaymentProcessing(false); // Reset loading state on error
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+        },
+        theme: {
+          color: '#594B00',
+        },
+      };
+
+      // Add event handlers for payment failure/cancellation
+      options.modal = {
+        ondismiss: function() {
+          // This runs when user closes the payment modal without completing payment
+          setIsSubmitting(false);
+          setIsPaymentProcessing(false);
+          alert('Payment was cancelled. Please try again if you wish to complete your booking.');
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
-      console.error('Booking submission error:', error);
-      alert('An error occurred while submitting your booking. Please try again.');
+      console.error('Payment initiation error:', error);
+      alert('An error occurred while initiating payment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,6 +196,43 @@ const StepThree = ({ goToStep }) => {
     return (
       <div className="w-full min-h-screen flex justify-center items-center">
         <p>Loading booking details...</p>
+      </div>
+    );
+  }
+
+  // Show loading screen during payment processing
+  if (isPaymentProcessing) {
+    return (
+      <div className="w-full min-h-screen flex justify-center items-start py-8 md:py-12 bg-gray-50">
+        {/* WRAPPER */}
+        <section className="w-[95%] md:w-[90%] min-h-screen flex flex-col md:flex-row rounded-2xl overflow-hidden border border-[#594B00]/20 shadow-sm bg-white">
+          {/* LEFT SIDEBAR */}
+          <BookingSidebar>
+            {/* You can add static content like "Book Your Stay" here */}
+          </BookingSidebar>
+
+          {/* RIGHT SIDE */}
+          <div className="w-full md:w-[70%] p-6 md:p-12 flex flex-col items-center justify-center">
+            {/* PROGRESS BAR */}
+            <ProgressBar active={3} onBack={goToStep} />
+            
+            {/* LOADING CONTENT */}
+            <div className="flex flex-col items-center justify-center text-center w-full max-w-2xl">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#594B00] mb-6"></div>
+              <h2 
+                className="text-2xl md:text-3xl font-serif text-center mb-4"
+                style={{ fontFamily: "Playfair Display", fontStyle: "italic", color: "#173A00" }}>
+                Processing Your Payment
+              </h2>
+              <p className="text-base text-[#173A00] mb-2" style={{ fontFamily: "Plus Jakarta Sans" }}>
+                Please wait while we confirm your booking...
+              </p>
+              <p className="text-sm text-[#173A00]/70" style={{ fontFamily: "Plus Jakarta Sans" }}>
+                This may take a few moments
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
@@ -215,7 +344,7 @@ const StepThree = ({ goToStep }) => {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Processing...
                 </div>
-              ) : `Proceed To Pay ₹${bookingData.totalAmount || '0.00'}-/`}
+              ) : `Proceed To Pay ₹${bookingData.totalAmount || '0.00'}/-`}
             </button>
 
             {/* FOOTNOTE */}
