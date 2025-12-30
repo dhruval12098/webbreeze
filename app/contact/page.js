@@ -2,9 +2,58 @@
 import React from "react";
 import Enquiry from "../components/common/Enquiry";
 
+import StructuredData from '@/components/common/StructuredData';
+
 const Page = () => {
+  // Contact page structured data
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "url": "https://breezeandgrains.com/contact",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://breezeandgrains.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Contact",
+          "item": "https://breezeandgrains.com/contact"
+        }
+      ]
+    }
+  };
+
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Breeze & Grains",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Alappuzha",
+      "addressLocality": "Alappuzha",
+      "addressRegion": "Kerala",
+      "postalCode": "688011",
+      "addressCountry": "IN"
+    },
+    "telephone": "+91-9XXXXXXXXX",
+    "email": "hello@breezeandgrains.com",
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "9.4981",
+      "longitude": "76.3388"
+    }
+  };
+
   return (
     <>
+      <StructuredData data={contactSchema} />
+      <StructuredData data={localBusinessSchema} />
       {/* FIRST SECTION — Image + Bottom-left Gradient */}
       <div className="w-full min-h-screen relative overflow-hidden rounded-b-3xl">
 

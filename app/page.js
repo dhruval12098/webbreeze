@@ -58,7 +58,7 @@ const Hero = () => {
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${
               i === index ? "opacity-100" : "opacity-0"
             }`}
-            alt="Slide"
+            alt="Breeze & Grains Homestay in Kerala backwaters"
           />
         ))}
       </div>

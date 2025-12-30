@@ -2,8 +2,59 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from '@/app/lib/supabaseClient';
+import StructuredData from '@/components/common/StructuredData';
 
 const Page = () => {
+  // About page structured data
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "url": "https://breezeandgrains.com/about",
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://breezeandgrains.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "About",
+          "item": "https://breezeandgrains.com/about"
+        }
+      ]
+    }
+  };
+
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Breeze & Grains",
+    "description": "A peaceful homestay tucked along the calm backwaters of Kerala. At Breeze & Grains, we believe a stay should feel like a slow breath — warm, natural, and unhurried.",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Alappuzha",
+      "addressLocality": "Alappuzha",
+      "addressRegion": "Kerala",
+      "postalCode": "688011",
+      "addressCountry": "IN"
+    },
+    "telephone": "+91-9XXXXXXXXX",
+    "email": "hello@breezeandgrains.com",
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "9.4981",
+      "longitude": "76.3388"
+    },
+    "image": [
+      "https://breezeandgrains.com/image/image8.jpg",
+      "https://breezeandgrains.com/image/image1.jpg"
+    ]
+  };
+
   const [ourStoryData, setOurStoryData] = useState(null);
   const [meetHostsData, setMeetHostsData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,6 +109,8 @@ const Page = () => {
 
   return (
     <main>
+      <StructuredData data={aboutSchema} />
+      <StructuredData data={localBusinessSchema} />
 
       {/* ========================= ABOUT SECTION ========================= */}
       <section className="w-full min-h-screen flex flex-col justify-center px-4 sm:pl-24 py-12">

@@ -126,7 +126,7 @@ const Page = () => {
       return (
         <img 
           src={iconUrl} 
-          alt="Amenity icon" 
+          alt="Room amenity icon" 
           className="w-8 h-8 object-contain"
         />
       );
