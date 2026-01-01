@@ -119,27 +119,46 @@ const GalleryPage = () => {
       {/* ---- MOBILE VIEW ---- */}
       <div className="w-full md:hidden">
         {currentImages.length > 0 ? (
-          <>
-            {/* Main Image Container - Square */}
-            <div 
-              className="w-full aspect-square bg-cover bg-center rounded-2xl mb-4"
-              style={{ backgroundImage: `url('${currentImages[currentIndex]}')` }}
-            ></div>
-
-            {/* Thumbnails */}
-            <div className="flex overflow-x-auto gap-2 pb-2">
-              {currentImages.map((img, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleImageSelect(index)}
-                  className={`flex-shrink-0 w-20 h-20 bg-cover bg-center rounded-lg cursor-pointer border-2 ${
-                    currentIndex === index ? "border-black" : "border-transparent"
-                  }`}
-                  style={{ backgroundImage: `url('${img}')` }}
-                ></div>
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-2 gap-4">
+            {currentImages.map((img, index) => {
+              // Determine the pattern for each image
+              const sectionIndex = Math.floor(index / 4);
+              const positionInSection = index % 4;
+              
+              // Define different styles based on position in the 4-image pattern
+              if (positionInSection === 0) {
+                // First image in each set of 4 - wide image (spans 2 columns)
+                return (
+                  <div 
+                    key={index}
+                    className="col-span-2 aspect-[4/3] bg-cover bg-center rounded-2xl"
+                    style={{ backgroundImage: `url('${img}')` }}
+                    onClick={() => handleImageSelect(index)}
+                  ></div>
+                );
+              } else if (positionInSection === 1 || positionInSection === 2) {
+                // Second and third images - regular boxes in 2-column grid
+                return (
+                  <div 
+                    key={index}
+                    className="aspect-square bg-cover bg-center rounded-2xl"
+                    style={{ backgroundImage: `url('${img}')` }}
+                    onClick={() => handleImageSelect(index)}
+                  ></div>
+                );
+              } else {
+                // Fourth image - wide image (spans 2 columns)
+                return (
+                  <div 
+                    key={index}
+                    className="col-span-2 aspect-[4/3] bg-cover bg-center rounded-2xl"
+                    style={{ backgroundImage: `url('${img}')` }}
+                    onClick={() => handleImageSelect(index)}
+                  ></div>
+                );
+              }
+            })}
+          </div>
         ) : (
           <div className="text-center py-10">
             <p>No images available in this gallery</p>
