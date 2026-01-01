@@ -32,9 +32,9 @@ async function createAdmin() {
   try {
     // Admin details - change these values as needed
     const adminData = {
-      email: 'admin@example.com',  // Change this to your desired admin email
-      password: 'admin123',        // Change this to a strong password
-      name: 'Admin User'           // Change this to the admin's name
+      email: 'Admin@b&g',  // Change this to your desired admin email
+      password: 'BreeZeGrainS@admin$',        // Change this to a strong password
+      name: 'BreezeOwner'           // Change this to the admin's name
     };
 
     // Hash the password

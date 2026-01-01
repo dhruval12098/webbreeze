@@ -16,6 +16,13 @@ const Navbar = () => {
     }
   }, [token, loading, verifySession]);
   
+  // Force re-render when pathname changes to ensure proper auth state on route changes
+  useEffect(() => {
+    if (!token && !loading) {
+      verifySession();
+    }
+  }, [currentPath, token, loading, verifySession]);
+  
   const handleLogout = () => {
     logout()
     window.location.href = '/'
@@ -38,6 +45,39 @@ const Navbar = () => {
           <div className="w-16 h-4 bg-[#C5D9B9] rounded animate-pulse"></div>
         </div>
       )
+    }
+
+    // If on login, signup, or profile page and no token, show login/signup buttons
+    if (currentPath === '/login' || currentPath === '/signup') {
+      if (token) {
+        // If we have a token but are on login/signup page, show profile button
+        return (
+          <button 
+            className="rounded-full px-4 py-1 text-xs uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9] flex items-center gap-2"
+            onClick={() => window.location.href = '/profile'}
+          >
+            Profile
+          </button>
+        );
+      } else {
+        // On login/signup page without token, show login/signup buttons
+        return (
+          <>
+            <a
+              href="/login"
+              className="rounded-full px-4 py-1 text-xs uppercase tracking-wide transition-all duration-200 font-light bg-transparent text-[#173A00] hover:bg-[#C5D9B9]"
+            >
+              Login
+            </a>
+            <a
+              href="/signup"
+              className="rounded-full px-4 py-1 text-xs uppercase tracking-wide transition-all duration-200 font-light bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+            >
+              Sign-up
+            </a>
+          </>
+        );
+      }
     }
 
     if (token) {
@@ -165,6 +205,44 @@ const Navbar = () => {
               <div className="rounded-full px-8 py-2 text-sm uppercase tracking-wide">
                 <div className="w-full h-8 bg-gray-200 rounded animate-pulse"></div>
               </div>
+            ) : currentPath === '/login' || currentPath === '/signup' ? (
+              token ? (
+                <div className="flex flex-col gap-3">
+                  <a
+                    href="/profile"
+                    className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Profile
+                  </a>
+                  <button
+                    className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+                    onClick={() => {
+                      handleLogout()
+                      setIsMenuOpen(false)
+                    }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#E0ECD9] text-[#173A00] hover:bg-[#C5D9B9]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Login
+                  </a>
+                  <a
+                    href="/signup"
+                    className="rounded-full px-4 py-1 text-xs uppercase tracking-wide font-light transition-all duration-200 bg-[#173A00] text-white border-2 border-[#173A00] hover:bg-[#0F2A00]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Sign-up
+                  </a>
+                </>
+              )
             ) : token ? (
               <div className="flex flex-col gap-3">
                 <a

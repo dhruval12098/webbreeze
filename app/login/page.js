@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/context/AuthContext'
 
@@ -12,7 +12,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, logout, verifySession, token } = useAuth()
+  
+  // On component mount, ensure any expired session is cleared
+  useEffect(() => {
+    // If there's a token but user is on login page, verify session
+    // This handles cases where user was redirected to login due to expired session
+    if (token) {
+      verifySession();
+    }
+  }, [token, verifySession]);
 
   const handleLogin = async (e) => {
     e.preventDefault()

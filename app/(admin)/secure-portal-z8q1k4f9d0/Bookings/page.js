@@ -8,11 +8,20 @@ const BookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [rooms, setRooms] = useState([]);
   const [filters, setFilters] = useState({
     search: '',
     room: '',
-    date: ''
+    date: '',
+    status: '',
+    paymentStatus: ''
   });
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Number of bookings per page
   const [showModal, setShowModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -89,26 +98,27 @@ const BookingsPage = () => {
 
 
 
-  // Fetch all bookings for admin view
+  // Fetch all bookings and rooms for admin view
   useEffect(() => {
     if (token) {
       const fetchAllBookings = async () => {
         try {
-          const response = await fetch('/api/admin/bookings', {
+          // Fetch bookings
+          const bookingsResponse = await fetch('/api/admin/bookings', {
             headers: {
               'authorization': `Bearer ${token}`
             }
           });
 
-          if (!response.ok) {
+          if (!bookingsResponse.ok) {
             throw new Error('Failed to fetch bookings');
           }
 
-          const result = await response.json();
+          const bookingsResult = await bookingsResponse.json();
 
-          if (result.success) {
+          if (bookingsResult.success) {
             // Transform the booking data to match the table format
-            const transformedBookings = result.data.map(booking => ({
+            const transformedBookings = bookingsResult.data.map(booking => ({
               id: booking.id,
               name: booking.user_name,
               user_email: booking.user_email,
@@ -128,8 +138,12 @@ const BookingsPage = () => {
               paymentMethod: booking.payment_method || 'Razorpay'
             }));
             setBookings(transformedBookings);
+            
+            // Extract unique rooms from bookings
+            const uniqueRooms = [...new Set(transformedBookings.map(booking => booking.room))];
+            setRooms(uniqueRooms);
           } else {
-            setError(result.error || 'Failed to fetch bookings');
+            setError(bookingsResult.error || 'Failed to fetch bookings');
           }
         } catch (err) {
           setError('An error occurred while fetching bookings');
@@ -142,6 +156,24 @@ const BookingsPage = () => {
       fetchAllBookings();
     }
   }, [token]);
+  
+  // Reset filters when component unmounts
+  useEffect(() => {
+    return () => {
+      setFilters({
+        search: '',
+        room: '',
+        date: '',
+        status: '',
+        paymentStatus: ''
+      });
+      setSortConfig({
+        key: null,
+        direction: 'asc'
+      });
+      setCurrentPage(1);
+    };
+  }, []);
 
   const getStatusStyle = (status) => {
     if (status === "Confirmed") return "bg-[#E8F6EF] text-[#0A3D2E] border-[#9FD9C3]";
@@ -161,12 +193,62 @@ const BookingsPage = () => {
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = filters.search === '' || 
       booking.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      booking.room.toLowerCase().includes(filters.search.toLowerCase());
+      booking.room.toLowerCase().includes(filters.search.toLowerCase()) ||
+      booking.user_email.toLowerCase().includes(filters.search.toLowerCase());
     const matchesRoom = filters.room === '' || booking.room === filters.room;
-    // Note: Date filtering would require more complex logic based on actual date format
+    const matchesStatus = filters.status === '' || booking.status.toLowerCase().includes(filters.status.toLowerCase());
     
-    return matchesSearch && matchesRoom;
+    // Handle payment status filtering - match 'paid' with 'Success' in the data
+    let matchesPaymentStatus = true;
+    if (filters.paymentStatus) {
+      if (filters.paymentStatus === 'paid') {
+        matchesPaymentStatus = booking.paymentStatus.toLowerCase() === 'success';
+      } else {
+        matchesPaymentStatus = booking.paymentStatus.toLowerCase().includes(filters.paymentStatus.toLowerCase());
+      }
+    }
+    
+    return matchesSearch && matchesRoom && matchesStatus && matchesPaymentStatus;
   });
+
+  // Sort bookings based on sort configuration
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    if (sortConfig.key) {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      // Handle different data types for sorting
+      if (typeof aValue === 'string') {
+        if (sortConfig.direction === 'asc') {
+          return aValue.localeCompare(bValue);
+        } else {
+          return bValue.localeCompare(aValue);
+        }
+      } else if (typeof aValue === 'number') {
+        if (sortConfig.direction === 'asc') {
+          return aValue - bValue;
+        } else {
+          return bValue - aValue;
+        }
+      } else {
+        // For dates or other types, convert to string for comparison
+        const aStr = String(aValue);
+        const bStr = String(bValue);
+        if (sortConfig.direction === 'asc') {
+          return aStr.localeCompare(bStr);
+        } else {
+          return bStr.localeCompare(aStr);
+        }
+      }
+    }
+    return 0;
+  });
+  
+  // Calculate pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = sortedBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedBookings.length / itemsPerPage);
 
   if (loading) {
     return (
@@ -209,7 +291,7 @@ const BookingsPage = () => {
           <Search size={18} className="icon" />
           <input 
             type="text" 
-            placeholder="Search by name or room" 
+            placeholder="Search by name, email, or room" 
             className="filter-input"
             value={filters.search}
             onChange={(e) => setFilters({...filters, search: e.target.value})}
@@ -219,13 +301,20 @@ const BookingsPage = () => {
         <div className="filter-box">
           <BedDouble size={18} className="icon" />
           <select 
-            className="filter-input"
+            className="filter-input appearance-none bg-transparent border-none focus:outline-none text-sm"
             value={filters.room}
             onChange={(e) => setFilters({...filters, room: e.target.value})}
           >
             <option value="">All Rooms</option>
-            {/* Options will be populated based on available rooms */}
+            {rooms.map((room, index) => (
+              <option key={index} value={room}>{room}</option>
+            ))}
           </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+            </svg>
+          </div>
         </div>
 
         <div className="filter-box">
@@ -237,6 +326,44 @@ const BookingsPage = () => {
             onChange={(e) => setFilters({...filters, date: e.target.value})}
           />
         </div>
+        
+        <div className="filter-box">
+          <select 
+            className="filter-input appearance-none bg-transparent border-none focus:outline-none text-sm"
+            value={filters.status}
+            onChange={(e) => setFilters({...filters, status: e.target.value})}
+          >
+            <option value="">All Statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+            </svg>
+          </div>
+        </div>
+        
+        <div className="filter-box">
+          <select 
+            className="filter-input appearance-none bg-transparent border-none focus:outline-none text-sm"
+            value={filters.paymentStatus}
+            onChange={(e) => setFilters({...filters, paymentStatus: e.target.value})}
+          >
+            <option value="">All Payment Statuses</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+            <option value="refunded">Refunded</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* TABLE SECTION */}
@@ -244,43 +371,239 @@ const BookingsPage = () => {
         <table className="w-full border-separate border-spacing-0 text-xs min-w-[1200px]">
           <thead>
             <tr className="text-[#6B7280] bg-[#F9FAFB] text-left border-b border-[#E5E7EB]">
-              <th className="py-3 px-3 font-medium">Customer</th>
-              <th className="py-3 px-3 font-medium">Room</th>
-              <th className="py-3 px-3 font-medium">Date</th>
-              <th className="py-3 px-3 font-medium">Check-in Time</th>
-              <th className="py-3 px-3 font-medium">Check-out Time</th>
-              <th className="py-3 px-3 font-medium">Guests</th>
-              <th className="py-3 px-3 font-medium">Status</th>
-              <th className="py-3 px-3 font-medium">Payment Status</th>
-              <th className="py-3 px-3 font-medium">Transaction ID</th>
-              <th className="py-3 px-3 font-medium">Phone</th>
-              <th className="py-3 px-3 font-medium">Special Requests</th>
-              <th className="py-3 px-3 font-medium">Amount</th>
-              <th className="py-3 px-3 font-medium">Payment Date</th>
-              <th className="py-3 px-3 font-medium">Payment Method</th>
-              <th className="py-3 px-3 font-medium text-right">Actions</th>
+              <th 
+                className="py-3 px-3 font-medium w-[120px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'name' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'name', direction });
+                }}
+              >
+                Customer
+                {sortConfig.key === 'name' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[150px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'room' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'room', direction });
+                }}
+              >
+                Room
+                {sortConfig.key === 'room' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[160px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'date' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'date', direction });
+                }}
+              >
+                Date
+                {sortConfig.key === 'date' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[100px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'checkInTime' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'checkInTime', direction });
+                }}
+              >
+                Check-in Time
+                {sortConfig.key === 'checkInTime' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[100px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'checkOutTime' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'checkOutTime', direction });
+                }}
+              >
+                Check-out Time
+                {sortConfig.key === 'checkOutTime' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[80px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'totalGuests' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'totalGuests', direction });
+                }}
+              >
+                Guests
+                {sortConfig.key === 'totalGuests' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[100px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'status' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'status', direction });
+                }}
+              >
+                Status
+                {sortConfig.key === 'status' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[100px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'paymentStatus' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'paymentStatus', direction });
+                }}
+              >
+                Payment Status
+                {sortConfig.key === 'paymentStatus' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[180px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'transactionId' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'transactionId', direction });
+                }}
+              >
+                Transaction ID
+                {sortConfig.key === 'transactionId' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[120px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'phone' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'phone', direction });
+                }}
+              >
+                Phone
+                {sortConfig.key === 'phone' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[180px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'specialRequests' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'specialRequests', direction });
+                }}
+              >
+                Special Requests
+                {sortConfig.key === 'specialRequests' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[100px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'amount' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'amount', direction });
+                }}
+              >
+                Amount
+                {sortConfig.key === 'amount' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[120px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'paymentDate' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'paymentDate', direction });
+                }}
+              >
+                Payment Date
+                {sortConfig.key === 'paymentDate' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th 
+                className="py-3 px-3 font-medium w-[120px] cursor-pointer hover:bg-gray-100"
+                onClick={() => {
+                  let direction = 'asc';
+                  if (sortConfig.key === 'paymentMethod' && sortConfig.direction === 'asc') {
+                    direction = 'desc';
+                  }
+                  setSortConfig({ key: 'paymentMethod', direction });
+                }}
+              >
+                Payment Method
+                {sortConfig.key === 'paymentMethod' && (
+                  <span className="ml-1">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th className="py-3 px-3 font-medium text-right w-[100px]">Actions</th>
             </tr>
           </thead>
 
           <tbody className="text-[#0A3D2E]">
-            {filteredBookings.length === 0 ? (
+            {currentBookings.length === 0 ? (
               <tr>
                 <td colSpan="14" className="py-8 px-3 text-center text-gray-500">
                   No bookings found
                 </td>
               </tr>
             ) : (
-              filteredBookings.map((item) => (
+              currentBookings.map((item) => (
                 <tr
                   key={item.id}
                   className="border-b border-[#E5E7EB] hover:bg-[#F8FAFB] transition"
                 >
-                  <td className="py-3 px-3 font-medium text-xs">{item.name}</td>
-                  <td className="px-3 text-xs">{item.room_name || item.room}</td>
-                  <td className="px-3 text-xs">{item.date}</td>
-                  <td className="px-3 text-xs">{item.checkInTime}</td>
-                  <td className="px-3 text-xs">{item.checkOutTime}</td>
-                  <td className="px-3 text-xs">{item.totalGuests}</td>
+                  <td className="py-3 px-3 font-medium text-xs max-w-[120px] truncate" title={item.name}>{item.name}</td>
+                  <td className="px-3 text-xs max-w-[150px] truncate" title={item.room_name || item.room}>{item.room_name || item.room}</td>
+                  <td className="px-3 text-xs max-w-[160px] truncate" title={item.date}>{item.date}</td>
+                  <td className="px-3 text-xs max-w-[100px] truncate" title={item.checkInTime}>{item.checkInTime}</td>
+                  <td className="px-3 text-xs max-w-[100px] truncate" title={item.checkOutTime}>{item.checkOutTime}</td>
+                  <td className="px-3 text-xs max-w-[80px] truncate" title={item.totalGuests}>{item.totalGuests}</td>
                   <td className="px-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs border font-medium ${getStatusStyle(
@@ -299,15 +622,15 @@ const BookingsPage = () => {
                       {item.paymentStatus}
                     </span>
                   </td>
-                  <td className="px-3 text-xs text-gray-600">{item.transactionId || "-"}</td>
-                  <td className="px-3 text-xs text-gray-600">{item.phone || "-"}</td>
-                  <td className="px-3 text-xs text-gray-600 max-w-32 truncate" title={item.specialRequests}>{item.specialRequests || "-"}</td>
-                  <td className="px-3 font-medium text-xs">{item.amount}</td>
-                  <td className="px-3 text-xs">{item.paymentDate || "-"}</td>
-                  <td className="px-3 text-xs">{item.paymentMethod || "-"}</td>
+                  <td className="px-3 text-xs text-gray-600 max-w-[180px] truncate" title={item.transactionId}>{item.transactionId || "-"}</td>
+                  <td className="px-3 text-xs text-gray-600 max-w-[120px] truncate" title={item.phone}>{item.phone || "-"}</td>
+                  <td className="px-3 text-xs text-gray-600 max-w-[180px] truncate" title={item.specialRequests}>{item.specialRequests || "-"}</td>
+                  <td className="px-3 font-medium text-xs max-w-[100px] truncate" title={item.amount}>{item.amount}</td>
+                  <td className="px-3 text-xs max-w-[120px] truncate" title={item.paymentDate}>{item.paymentDate || "-"}</td>
+                  <td className="px-3 text-xs max-w-[120px] truncate" title={item.paymentMethod}>{item.paymentMethod || "-"}</td>
 
                   {/* ACTION BUTTONS */}
-                  <td className="px-3 text-right">
+                  <td className="px-3 text-right w-[100px]">
                     <button className="p-2 rounded-lg border border-[#E5E7EB] hover:bg-[#F3F4F6] transition" onClick={() => openModal(item)}>
                       <Eye size={16} className="text-[#0A3D2E]" />
                     </button>
@@ -318,6 +641,60 @@ const BookingsPage = () => {
           </tbody>
         </table>
       </div>
+      
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="w-full px-8 py-4 flex items-center justify-between border-t border-[#E5E7EB] bg-white">
+          <div className="text-sm text-[#6B7280]">
+            Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, sortedBookings.length)} of {sortedBookings.length} bookings
+          </div>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`px-3 py-1.5 rounded-md border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-[#0A3D2E] hover:bg-gray-50'}`}
+            >
+              Previous
+            </button>
+            
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                // Show all pages if total is 5 or less
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                // Show first 5 pages when current page is 1, 2, or 3
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                // Show last 5 pages when current page is near the end
+                pageNum = totalPages - 4 + i;
+              } else {
+                // Show pages around current page
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`w-10 h-10 rounded-full ${currentPage === pageNum ? 'bg-[#0A3D2E] text-white' : 'border border-[#E5E7EB] text-[#0A3D2E] hover:bg-gray-50'}`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1.5 rounded-md border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-[#0A3D2E] hover:bg-gray-50'}`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MODAL */}
       {showModal && selectedBooking && (
@@ -466,6 +843,7 @@ const BookingsPage = () => {
           border: 1px solid #E5E7EB;
           padding: 10px 16px;
           border-radius: 12px;
+          position: relative;
         }
 
         .filter-input {
@@ -473,6 +851,7 @@ const BookingsPage = () => {
           outline: none;
           font-size: 14px;
           color: #0A3D2E;
+          width: 100%;
         }
 
         .icon {
