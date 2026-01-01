@@ -45,6 +45,22 @@ export async function GET(request, { params }) {
       );
     }
     
+    // Check if session is about to expire (within 10 minutes) and refresh it
+    const tenMinutesInMs = 10 * 60 * 1000; // 10 minutes in milliseconds
+    if (expiresAt.getTime() - now.getTime() < tenMinutesInMs) {
+      // Extend the session by 12 hours
+      const newExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours from now
+      
+      const { error: updateError } = await supabase
+        .from('user_sessions')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('token', token);
+        
+      if (updateError) {
+        console.error('Error updating session expiry:', updateError);
+      }
+    }
+    
     const userId = session.user_id;
     
     // Get the booking and ensure it belongs to the user
@@ -120,6 +136,22 @@ export async function PUT(request, { params }) {
       );
     }
     
+    // Check if session is about to expire (within 10 minutes) and refresh it
+    const tenMinutesInMs = 10 * 60 * 1000; // 10 minutes in milliseconds
+    if (expiresAt.getTime() - now.getTime() < tenMinutesInMs) {
+      // Extend the session by 12 hours
+      const newExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours from now
+      
+      const { error: updateError } = await supabase
+        .from('user_sessions')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('token', token);
+        
+      if (updateError) {
+        console.error('Error updating session expiry:', updateError);
+      }
+    }
+    
     const userId = session.user_id;
     
     // Update the booking and ensure it belongs to the user
@@ -193,6 +225,22 @@ export async function DELETE(request, { params }) {
         JSON.stringify({ success: false, error: 'Session has expired' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
+    }
+    
+    // Check if session is about to expire (within 10 minutes) and refresh it
+    const tenMinutesInMs = 10 * 60 * 1000; // 10 minutes in milliseconds
+    if (expiresAt.getTime() - now.getTime() < tenMinutesInMs) {
+      // Extend the session by 12 hours
+      const newExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours from now
+      
+      const { error: updateError } = await supabase
+        .from('user_sessions')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('token', token);
+        
+      if (updateError) {
+        console.error('Error updating session expiry:', updateError);
+      }
     }
     
     const userId = session.user_id;

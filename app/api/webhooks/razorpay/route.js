@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -90,8 +91,8 @@ async function handlePaymentCaptured(payment) {
 
     console.log('Booking updated with payment success:', booking?.id);
 
-    // You can add additional logic here like sending confirmation emails
-    // await sendBookingConfirmationEmail(booking);
+    // Send booking confirmation email
+    await sendBookingConfirmationEmail(booking);
   } catch (error) {
     console.error('Error in handlePaymentCaptured:', error);
   }
@@ -122,8 +123,140 @@ async function handlePaymentFailed(payment) {
     }
 
     console.log('Booking updated with payment failure:', booking?.id);
+    
+    // Send email notification to customer about failed payment
+    if (booking) {
+      await sendPaymentFailureEmail(booking);
+      
+      // Trigger additional payment failure notifications
+      try {
+        await fetch('/api/payment-failed', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            booking_id: booking.id,
+            user_email: user?.email,
+            user_name: user?.name,
+            amount: booking.payment_amount
+          }),
+        });
+      } catch (notificationError) {
+        console.error('Error in payment failure notification:', notificationError);
+      }
+    }
   } catch (error) {
     console.error('Error in handlePaymentFailed:', error);
+  }
+}
+
+// Function to send booking confirmation email
+async function sendBookingConfirmationEmail(booking) {
+  try {
+    // Fetch user details to get email
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('email, name')
+      .eq('id', booking.user_id)
+      .single();
+
+    if (userError) {
+      console.error('Error fetching user for email:', userError);
+      return;
+    }
+
+    // Send email notification
+    const emailResponse = await fetch('/api/send-booking-emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        booking_id: booking.id,
+        user_email: user.email,
+        user_name: user.name
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      console.error('Failed to send booking confirmation email');
+    }
+  } catch (error) {
+    console.error('Error in sendBookingConfirmationEmail:', error);
+  }
+}
+
+// Function to send payment failure email
+async function sendPaymentFailureEmail(booking) {
+  try {
+    // Fetch user details to get email
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('email, name')
+      .eq('id', booking.user_id)
+      .single();
+
+    if (userError) {
+      console.error('Error fetching user for email:', userError);
+      return;
+    }
+
+    // Create a temporary email API endpoint for failed payments
+    const emailData = {
+      to: user.email,
+      subject: 'Payment Failed - Booking Update',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #594B00;">Payment Failed Notification</h2>
+          <p>Dear ${user.name},</p>
+          <p>We regret to inform you that your payment for booking ID: ${booking.id} has failed.</p>
+          <p><strong>Booking Details:</strong></p>
+          <ul>
+            <li>Booking ID: ${booking.id}</li>
+            <li>Room ID: ${booking.room_id}</li>
+            <li>Check-in: ${booking.check_in_date}</li>
+            <li>Check-out: ${booking.check_out_date}</li>
+            <li>Amount: ₹${booking.payment_amount || '0'}</li>
+          </ul>
+          <p>Your booking status is now marked as failed in our system.</p>
+          <p><strong>Refund Information:</strong></p>
+          <p>If your payment was deducted, it will be refunded to your original payment method within 5-7 business days. This process is automatic and no action is required from your side.</p>
+          <p>If you have any questions or need assistance, please contact us:</p>
+          <div style="background-color: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px;">
+            <p><strong>Need Help?</strong></p>
+            <p>For any queries regarding this failed payment:</p>
+            <a href="https://wa.me/919999999999" target="_blank" style="display: inline-block; background-color: #25D366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 10px;">Contact us on WhatsApp</a>
+            <p style="margin-top: 10px;">Or email us at: breezegrains@gmail.com</p>
+          </div>
+          <p>Thank you for choosing Breeze and Grains.</p>
+          <p>Best regards,<br>The Breeze and Grains Team</p>
+        </div>
+      `,
+    };
+
+    // Use nodemailer directly to send the email
+    const transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE,
+      auth: {
+        user: process.env.ADMIN_EMAIL,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.ADMIN_EMAIL,
+      to: emailData.to,
+      subject: emailData.subject,
+      html: emailData.html,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error in sendPaymentFailureEmail:', error);
   }
 }
 
@@ -155,8 +288,8 @@ async function handleOrderPaid(order, payment) {
 
     console.log('Booking updated with order paid:', booking?.id);
 
-    // You can add additional logic here like sending confirmation emails
-    // await sendBookingConfirmationEmail(booking);
+    // Send booking confirmation email
+    await sendBookingConfirmationEmail(booking);
   } catch (error) {
     console.error('Error in handleOrderPaid:', error);
   }

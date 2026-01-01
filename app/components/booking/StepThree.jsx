@@ -154,8 +154,9 @@ const StepThree = ({ goToStep }) => {
               
               goToStep(4);
             } else {
-              alert(`Booking failed: ${result.error}`);
-              setIsPaymentProcessing(false); // Reset loading state on failure
+              // Redirect to payment failed page on booking failure
+              setIsPaymentProcessing(false);
+              window.location.href = '/payment-failed';
             }
           } catch (error) {
             console.error('Booking submission error:', error);

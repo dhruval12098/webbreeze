@@ -41,6 +41,24 @@ export async function GET(request) {
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Check if session is about to expire (within 10 minutes) and refresh it
+    const tenMinutesInMs = 10 * 60 * 1000; // 10 minutes in milliseconds
+    const now = new Date();
+    const expiresAt = new Date(session.expires_at);
+    if (expiresAt.getTime() - now.getTime() < tenMinutesInMs) {
+      // Extend the session by 12 hours
+      const newExpiry = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours from now
+      
+      const { error: updateError } = await supabase
+        .from('user_sessions')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('token', token);
+        
+      if (updateError) {
+        console.error('Error updating session expiry:', updateError);
+      }
+    }
 
     // Return user data without password, ensuring clean data extraction
     const cleanUser = {
