@@ -100,7 +100,12 @@ const Footer = () => {
         showToast("Thank you for subscribing!", 'success');
         e.target.reset(); // Reset form
       } else {
-        showToast("Something went wrong. Please try again.", 'error');
+        const data = await response.json();
+        if (response.status === 409) {
+          showToast("You are already subscribed to our newsletter!", 'info');
+        } else {
+          showToast(data.error || "Something went wrong. Please try again.", 'error');
+        }
       }
     } catch (err) {
       showToast(`Error: ${err.message}`, 'error');

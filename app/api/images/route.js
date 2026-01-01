@@ -1,6 +1,6 @@
 import { supabase } from '@/app/lib/supabaseClient';
 import { uploadImageToStorage, deleteImageFromStorage } from '@/app/lib/imageService';
-import { authenticateRequest } from '@/app/api/middleware/auth';
+import { authenticateAdminRequest } from '@/app/api/admin/middleware/auth';
 
 // POST /api/images/upload - Upload an image
 export async function POST(request) {
@@ -34,8 +34,8 @@ const deleteImage = async (request) => {
     console.log('Skipping authentication in development mode');
   } else {
     try {
-      const authCheck = await authenticateRequest(request);
-      if (authCheck) return authCheck; // Return unauthorized response if auth fails
+      const authCheck = await authenticateAdminRequest(request);
+      if (authCheck.success !== true) return authCheck; // Return unauthorized response if auth fails
     } catch (authError) {
       return new Response(
         JSON.stringify({ success: false, error: 'Authentication error: ' + authError.message }),

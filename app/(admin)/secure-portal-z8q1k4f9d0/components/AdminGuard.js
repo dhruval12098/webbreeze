@@ -25,10 +25,11 @@ export default function AdminGuard({ children }) {
     setIsChecking(false);
   }, [user, loading, isAuthenticated, router]);
 
+  // Show loading while auth is loading or checking is still true
   if (loading || isChecking) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-2xl font-semibold">Loading...</div>
+        <div className="text-2xl font-semibold">Verifying session...</div>
       </div>
     );
   }

@@ -7,6 +7,7 @@ import {
   MessageSquare,
   FileText,
   User,
+  Mail,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
     { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/secure-portal-z8q1k4f9d0/Dashboard" },
     { name: "Bookings", icon: <CalendarCheck2 size={18} />, path: "/secure-portal-z8q1k4f9d0/Bookings" },
     { name: "Enquiries", icon: <MessageSquare size={18} />, path: "/secure-portal-z8q1k4f9d0/Enquiries" },
+    { name: "Newsletter", icon: <Mail size={18} />, path: "/secure-portal-z8q1k4f9d0/Newsletter" },
     { name: "Content", icon: <FileText size={18} />, path: "/secure-portal-z8q1k4f9d0/Content" },
     { name: "Profile", icon: <User size={18} />, path: "/secure-portal-z8q1k4f9d0/Profile" },
   ];

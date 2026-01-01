@@ -114,7 +114,7 @@ const ReviewSection = () => {
   // Show loading state
   if (loading) {
     return (
-      <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+      <div className="w-full bg-white px-4 pt-6 pb-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
         <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
           <div className="text-center py-12">
             <p>Loading reviews...</p>
@@ -127,7 +127,7 @@ const ReviewSection = () => {
   // Show error state
   if (error) {
     return (
-      <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+      <div className="w-full bg-white px-4 pt-6 pb-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
         <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
           <div className="text-center py-12">
             <p>Error loading reviews: {error}</p>
@@ -140,7 +140,7 @@ const ReviewSection = () => {
   // Show empty state
   if (reviews.length === 0) {
     return (
-      <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+      <div className="w-full bg-white px-4 pt-6 pb-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
         <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
           <div className="text-center py-12">
             <p>No reviews available yet.</p>
@@ -151,11 +151,11 @@ const ReviewSection = () => {
   }
 
   return (
-    <div className="w-full bg-white px-4 py-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
+    <div className="w-full bg-white px-4 pt-6 pb-12 md:py-16 min-h-screen flex items-center border border-neutral-50 rounded-lg">
       <div className="mx-auto w-full" style={{ width: "98%", maxWidth: "1400px" }}>
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 md:mb-16 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-16 gap-4">
           <h2
             className="text-4xl md:text-5xl italic"
             style={{ fontFamily: "Playfair Display, serif", color: "#594B00" }}
@@ -180,7 +180,7 @@ const ReviewSection = () => {
         </div>
 
         {/* Review Carousel */}
-        <div className="relative flex items-center justify-center gap-4 md:gap-8 mb-12">
+        <div className="relative flex items-center justify-center gap-4 md:gap-8 mb-6 md:mb-12">
           
           {/* Left Arrow */}
           <button
@@ -194,7 +194,7 @@ const ReviewSection = () => {
           {/* Review Text Content */}
           <div className="flex-1 text-center max-w-3xl px-2 md:px-0">
             <p
-              className="text-lg md:text-xl leading-relaxed mb-6 md:mb-8 font-semibold"
+              className="text-lg md:text-xl leading-relaxed mb-4 md:mb-8 font-semibold"
               style={{ fontFamily: "Plus Jakarta Sans, sans-serif", color: "#594B00" }}
             >
               "

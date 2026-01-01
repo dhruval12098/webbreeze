@@ -55,14 +55,14 @@ const Page = () => {
       <StructuredData data={contactSchema} />
       <StructuredData data={localBusinessSchema} />
       {/* FIRST SECTION — Image + Bottom-left Gradient */}
-      <div className="w-full min-h-screen relative overflow-hidden rounded-b-3xl">
+      <div className="w-full min-h-[400px] md:min-h-screen relative overflow-hidden rounded-b-3xl">
 
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "url('https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?auto=format&fit=crop&w=1200&q=80')",
+              "url('/image/image5.jpg')",
           }}
         ></div>
 

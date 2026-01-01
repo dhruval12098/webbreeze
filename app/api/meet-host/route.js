@@ -1,5 +1,5 @@
 import { supabase } from '@/app/lib/supabaseClient';
-import { withAuth } from '@/app/api/middleware/auth';
+import { withAdminAuth } from '@/app/api/admin/middleware/auth';
 
 // GET /api/meet-host - Get meet host section data
 export async function GET(request) {
@@ -88,13 +88,13 @@ const updateMeetHost = async (request) => {
 
 // Export POST without authentication for testing purposes
 // In production, uncomment the line below and comment the other export
-// export const POST = withAuth(updateMeetHost);
+// export const POST = withAdminAuth(updateMeetHost);
 export async function POST(request) {
   // For development/testing, bypass authentication
   if (process.env.NODE_ENV === 'development') {
     return updateMeetHost(request);
   }
   
-  // In production, use authentication
-  return withAuth(updateMeetHost)(request);
+  // In production, use admin authentication
+  return withAdminAuth(updateMeetHost)(request);
 }

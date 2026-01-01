@@ -17,8 +17,12 @@ const page = () => {
     }
   }, [isAuthenticated, user, loading, router]);
 
-  if (loading || (!isAuthenticated || !user || !user.isAdmin)) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Verifying session...</div>;
+  }
+
+  if (!isAuthenticated || !user || !user.isAdmin) {
+    return <div className="flex items-center justify-center min-h-screen">Redirecting...</div>;
   }
 
   return (

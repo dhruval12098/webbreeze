@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
@@ -13,7 +13,14 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, loading: authLoading, isAuthenticated } = useAuth();
+
+  // Redirect to dashboard if already authenticated as admin
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user && user.isAdmin) {
+      router.push('/secure-portal-z8q1k4f9d0');
+    }
+  }, [isAuthenticated, user, authLoading, router]);
 
   const handleAdminLogin = async (e) => {
     e.preventDefault();

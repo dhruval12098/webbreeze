@@ -68,10 +68,15 @@ const Page = () => {
                 <div className="flex gap-[3px]">
                   <Star className="w-5 h-5 fill-[#FFD700] text-[#FFD700]" />
                   <Star className="w-5 h-5 fill-[#FFD700] text-[#FFD700]" />
+                  
                   <Star className="w-5 h-5 fill-[#FFD700] text-[#FFD700]" />
                   <Star className="w-5 h-5 fill-[#FFD700] text-[#FFD700]" />
-                  <Star className="w-5 h-5 fill-[#FFD700] text-[#FFD700]" />
-                  <Star className="w-5 h-5 fill-gray-300 text-gray-300" />
+                  <div className="w-5 h-5 relative">
+                                    <Star className="w-5 h-5 fill-gray-300 text-gray-300 absolute" />
+                                    <div className="absolute top-0 left-0 w-1/2 h-full overflow-hidden">
+                                      <Star className="w-5 h-5 fill-[#FFD700] text-[#FFD700]" />
+                                    </div>
+                                  </div>
                 </div>
 
                 <p

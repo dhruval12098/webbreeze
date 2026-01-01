@@ -141,7 +141,7 @@ const Page = () => {
       </section>
 
       {/* ========================= OUR STORY SECTION ========================= */}
-      <section className="w-[98%] mx-auto h-screen rounded-3xl relative mt-12 sm:mt-16 overflow-hidden">
+      <section className="w-[98%] mx-auto min-h-[500px] md:h-screen rounded-3xl relative mt-12 sm:mt-16 overflow-hidden">
         {/* Background Image - matching enquiry image style */}
         <div
           className="absolute inset-0 bg-cover bg-center"

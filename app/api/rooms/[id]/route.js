@@ -1,4 +1,5 @@
 import { supabase } from '@/app/lib/supabaseClient';
+import { authenticateAdminRequest } from '@/app/api/admin/middleware/auth';
 
 // GET /api/rooms/[id] - Get a specific room by ID
 export async function GET(request, { params }) {
@@ -33,6 +34,19 @@ export async function GET(request, { params }) {
 // PUT /api/rooms/[id] - Update a specific room by ID
 const updateRoom = async (request, { params }) => {
   try {
+    // Skip authentication during development/testing
+    if (process.env.NODE_ENV !== 'development') {
+      try {
+        const authCheck = await authenticateAdminRequest(request);
+        if (authCheck.success !== true) return authCheck; // Return unauthorized response if auth fails
+      } catch (authError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Authentication error: ' + authError.message }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
     const { id } = await params;
     const body = await request.json();
     
@@ -65,6 +79,19 @@ export const PUT = updateRoom;
 // DELETE /api/rooms/[id] - Delete a specific room by ID
 const deleteRoom = async (request, { params }) => {
   try {
+    // Skip authentication during development/testing
+    if (process.env.NODE_ENV !== 'development') {
+      try {
+        const authCheck = await authenticateAdminRequest(request);
+        if (authCheck.success !== true) return authCheck; // Return unauthorized response if auth fails
+      } catch (authError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Authentication error: ' + authError.message }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
     const { id } = await params;
     
     const { data, error } = await supabase

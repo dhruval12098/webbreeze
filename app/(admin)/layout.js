@@ -10,6 +10,7 @@ export default function AdminRootLayout({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Only redirect after loading is complete
     if (!loading) {
       // If user is not authenticated and not on login page, redirect to login
       if (!isAuthenticated && pathname !== '/admin-login' && pathname !== '/(admin)/admin-login') {
@@ -18,8 +19,17 @@ export default function AdminRootLayout({ children }) {
     }
   }, [isAuthenticated, loading, router, pathname]);
 
+  // If still loading auth state, show loading indicator
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-xl font-semibold text-gray-700">Verifying session...</div>
+      </div>
+    );
+  }
+
   // If not authenticated and not on login page, don't render children until redirect happens
-  if (!isAuthenticated && !loading && pathname !== '/admin-login' && pathname !== '/(admin)/admin-login') {
+  if (!isAuthenticated && pathname !== '/admin-login' && pathname !== '/(admin)/admin-login') {
     return null;
   }
 

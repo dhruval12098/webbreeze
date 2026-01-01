@@ -91,10 +91,10 @@ const OverviewSection = () => {
   }, []);
 
   return (
-    <div className="w-[98%] mx-auto rounded-3xl bg-white min-h-screen relative overflow-hidden px-4 py-12">
+    <div className="w-[98%] mx-auto rounded-3xl bg-white min-h-screen relative overflow-hidden px-4 py-12 pb-6 md:pb-12">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4 md:mb-8">
         <h2
           className="text-3xl md:text-4xl lg:text-5xl italic"
           style={{ fontFamily: "Playfair Display" }}

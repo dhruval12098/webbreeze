@@ -1,4 +1,5 @@
 import { supabase } from '@/app/lib/supabaseClient';
+import { authenticateAdminRequest } from '@/app/api/admin/middleware/auth';
 
 // GET /api/amenities - Get all amenities
 export async function GET(request) {
@@ -29,6 +30,19 @@ export async function GET(request) {
 // POST /api/amenities - Create a new amenity
 export async function POST(request) {
   try {
+    // Skip authentication during development/testing
+    if (process.env.NODE_ENV !== 'development') {
+      try {
+        const authCheck = await authenticateAdminRequest(request);
+        if (authCheck.success !== true) return authCheck; // Return unauthorized response if auth fails
+      } catch (authError) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Authentication error: ' + authError.message }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
     const body = await request.json();
     
     const { data, error } = await supabase

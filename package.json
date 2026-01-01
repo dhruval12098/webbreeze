@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "init-gallery": "node init-gallery-table-simple.js"
+    "init-gallery": "node init-gallery-table-simple.js",
+    "init-newsletter": "node create-newsletter-table.js"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
