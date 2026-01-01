@@ -20,6 +20,9 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  other: {
+    "google-site-verification": "-FXNG3dM3tOez9IV10shtu59vZtng_EptxTUBcIqMOI"
+  }
 };
 
 export default function RootLayout({ children }) {
