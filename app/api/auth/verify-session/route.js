@@ -12,7 +12,7 @@ export async function GET(request) {
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix and any whitespace
 
     // Check if session exists and is valid
     const { data: session, error: sessionError } = await supabase

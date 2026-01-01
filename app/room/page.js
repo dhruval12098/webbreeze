@@ -180,7 +180,7 @@ const Page = () => {
 
               {/* Price */}
               <div className="flex items-center gap-3 mt-6">
-                <p className="text-3xl font-semibold" style={{ color: "#594B00" }}>₹{typeof roomData?.price === 'number' ? roomData.price.toLocaleString() : roomData?.price || "19,000"}/-</p>
+                <p className="text-3xl font-bold" style={{ color: "#594B00" }}>₹{typeof roomData?.price === 'number' ? roomData.price.toLocaleString() : roomData?.price || "19,000"}/-</p>
                 <span className="px-3 py-1 bg-[#594B00] text-white text-xs rounded-full">
                   {roomData?.label || "Entire Homestay"}
                 </span>
@@ -367,7 +367,7 @@ const Page = () => {
 
             {/* Price */}
             <div className="flex items-center gap-3 mt-6">
-              <p className="text-3xl font-semibold" style={{ color: "#594B00" }}>₹{typeof roomData?.price === 'number' ? roomData.price.toLocaleString() : roomData?.price || "19,000"}/-</p>
+              <p className="text-3xl font-bold" style={{ color: "#594B00" }}>₹{typeof roomData?.price === 'number' ? roomData.price.toLocaleString() : roomData?.price || "19,000"}/-</p>
               <span className="px-3 py-1 bg-[#594B00] text-white text-xs rounded-full">
                 {roomData?.label || "Entire Homestay"}
               </span>

@@ -11,7 +11,7 @@ const TimePicker = ({ selectedTime, onTimeSelect, isCheckInTime = false }) => {
       return { hours: '12', minutes: '00', period: 'PM' };
     }
     
-    // Check if the time string is in 24-hour format (HH:MM) or 12-hour format (HH:MM AM/PM)
+    // Check if the time string is in 12-hour format (HH:MM AM/PM)
     if (timeString.includes('AM') || timeString.includes('PM')) {
       // It's already in 12-hour format
       const [time, period] = timeString.split(' ');
@@ -88,76 +88,96 @@ const TimePicker = ({ selectedTime, onTimeSelect, isCheckInTime = false }) => {
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-lg w-64">
-      <h2 className="text-xl font-semibold mb-4 text-gray-700">Select Time</h2>
-      <div className="flex items-center justify-center space-x-2">
-        {/* Hours */}
-        <select
-          value={hours}
-          onChange={(e) => {
-            setHours(e.target.value);
-            // Update parent component
-            const timeString = `${e.target.value}:${minutes} ${period}`;
-            if (onTimeSelect) {
-              onTimeSelect(timeString);
-            }
-          }}
-          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-gray-800 font-medium"
-        >
-          {hourOptions.map((h) => (
-            <option key={h} value={h}>{h}</option>
-          ))}
-        </select>
+  const handleApplyTime = () => {
+    const timeString = `${hours}:${minutes} ${period}`;
+    if (onTimeSelect) {
+      onTimeSelect(timeString);
+    }
+  };
 
-        <span className="text-gray-500 font-semibold">:</span>
+  return (
+    <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl w-72 border border-gray-200 z-50">
+      <h2 className="text-lg font-semibold mb-4 text-gray-800">Select Time</h2>
+      
+      <div className="flex items-center justify-center space-x-3 mb-4">
+        {/* Hours */}
+        <div className="relative">
+          <select
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            className="w-16 h-12 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-center font-medium text-gray-800 shadow-sm transition-all duration-200 appearance-none cursor-pointer hover:border-blue-300"
+          >
+            {hourOptions.map((h) => (
+              <option key={h} value={h} className="text-center bg-white hover:bg-blue-50">{h}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        <span className="text-gray-500 font-semibold text-lg">:</span>
 
         {/* Minutes */}
-        <select
-          value={minutes}
-          onChange={(e) => {
-            setMinutes(e.target.value);
-            // Update parent component
-            const timeString = `${hours}:${e.target.value} ${period}`;
-            if (onTimeSelect) {
-              onTimeSelect(timeString);
-            }
-          }}
-          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-gray-800 font-medium"
-        >
-          {minuteOptions.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+            className="w-16 h-12 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-center font-medium text-gray-800 shadow-sm transition-all duration-200 appearance-none cursor-pointer hover:border-blue-300"
+          >
+            {minuteOptions.map((m) => (
+              <option key={m} value={m} className="text-center bg-white hover:bg-blue-50">{m}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
 
         {/* AM/PM */}
-        <select
-          value={period}
-          onChange={(e) => {
-            setPeriod(e.target.value);
-            // Update parent component
-            const timeString = `${hours}:${minutes} ${e.target.value}`;
-            if (onTimeSelect) {
-              onTimeSelect(timeString);
-            }
-          }}
-          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-gray-800 font-medium"
-          disabled={isCheckInTime} // Disable AM/PM selection for check-in time
-        >
-          {isCheckInTime ? (
-            <option value="PM">PM</option> // Only allow PM for check-in time
-          ) : (
-            <>
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </>
-          )}
-        </select>
+        <div className="relative">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="w-16 h-12 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-center font-medium text-gray-800 shadow-sm transition-all duration-200 appearance-none cursor-pointer hover:border-blue-300"
+            disabled={isCheckInTime} // Disable AM/PM selection for check-in time
+          >
+            {isCheckInTime ? (
+              <option value="PM" className="bg-white hover:bg-blue-50">PM</option> // Only allow PM for check-in time
+            ) : (
+              <>
+                <option value="AM" className="bg-white hover:bg-blue-50">AM</option>
+                <option value="PM" className="bg-white hover:bg-blue-50">PM</option>
+              </>
+            )}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 text-gray-700 font-medium">
-        Selected Time: {hours}:{minutes} {period}
+      {/* Selected Time Display */}
+      <div className="text-lg font-medium text-gray-700 mb-4">
+        Selected: <span className="font-bold text-blue-600">{hours}:{minutes} {period}</span>
       </div>
+
+      {/* Apply Button */}
+      <button
+        onClick={handleApplyTime}
+        className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center transform hover:-translate-y-0.5"
+      >
+        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Apply Time
+      </button>
     </div>
   );
 };

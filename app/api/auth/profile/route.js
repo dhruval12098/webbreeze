@@ -11,7 +11,7 @@ export async function GET(request) {
       );
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix and any whitespace
 
     // Verify the session token
     const { data: session, error: sessionError } = await supabase
@@ -99,7 +99,7 @@ export async function PUT(request) {
       );
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7).trim(); // Remove 'Bearer ' prefix and any whitespace
 
     // Verify the session token
     const { data: session, error: sessionError } = await supabase

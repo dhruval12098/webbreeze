@@ -41,9 +41,9 @@ export async function POST(request) {
     // For now, we'll return user data with a simple token
     const token = generateToken();
     
-    // Set expiration: 7 days default, 30 days with rememberMe
-    const expirationDays = rememberMe ? 30 : 7;
-    const expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
+    // Set expiration: 12 hours default, 7 days with rememberMe
+    const expirationHours = rememberMe ? 168 : 12; // 168 hours = 7 days, 12 hours for regular session
+    const expiresAt = new Date(Date.now() + expirationHours * 60 * 60 * 1000);
 
     // Store session in the user_sessions table
     const { error: sessionError } = await supabase
