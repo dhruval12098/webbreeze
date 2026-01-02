@@ -173,131 +173,171 @@ const GalleryPage = () => {
           <div className="w-full">
             {galleryImages.guest.length > 0 ? (
               <>
-                {/* ---- SECTION 1 ---- */}
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div 
-                    className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                    style={{ backgroundImage: `url('${galleryImages.guest[0]}')` }}
-                  ></div>
-                  {galleryImages.guest.length > 1 && (
-                    <div 
-                      className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.guest[1]}')` }}
-                    ></div>
-                  )}
+                {/* Dynamic rendering for all guest images */}
+                <div className="space-y-6">
+                  {/* Process images in groups of 8 */}
+                  {Array.from({ length: Math.ceil(galleryImages.guest.length / 8) }, (_, sectionIndex) => {
+                    const startIndex = sectionIndex * 8;
+                    const remainingImages = galleryImages.guest.length - startIndex;
+                    const endIndex = Math.min(startIndex + 8, galleryImages.guest.length);
+                    
+                    // Get images for this section
+                    const sectionImages = galleryImages.guest.slice(startIndex, endIndex);
+                    
+                    if (remainingImages >= 8) {
+                      // Full section with 8 images
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          {/* Row with 2 large images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[1]}')` }}
+                            ></div>
+                          </div>
+                          
+                          {/* Row with 1 wide and 2 small images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div 
+                              className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[2]}')` }}
+                            ></div>
+                            <div className="flex flex-col gap-4">
+                              <div 
+                                className="h-[240px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[3]}')` }}
+                              ></div>
+                              <div 
+                                className="h-[240px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[4]}')` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          {/* Row with 3 small images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div 
+                              className="h-[300px] bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[5]}')` }}
+                            ></div>
+                            {sectionImages.length > 6 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[6]}')` }}
+                              ></div>
+                            )}
+                            {sectionImages.length > 7 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[7]}')` }}
+                              ></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    } else if (remainingImages >= 4) {
+                      // Section with 4-7 images
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          {/* Row with 2 images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[1]}')` }}
+                            ></div>
+                          </div>
+                          
+                          {/* Row with 1 wide and 1-2 small images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div 
+                              className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[2]}')` }}
+                            ></div>
+                            <div className="flex flex-col gap-4">
+                              <div 
+                                className="h-[240px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[3]}')` }}
+                              ></div>
+                              {sectionImages.length > 4 && (
+                                <div 
+                                  className="h-[240px] bg-cover bg-center rounded-2xl"
+                                  style={{ backgroundImage: `url('${sectionImages[4]}')` }}
+                                ></div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Row with remaining images (for 5-7 total) */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            {sectionImages.length > 5 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[5]}')` }}
+                              ></div>
+                            )}
+                            {sectionImages.length > 6 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[6]}')` }}
+                              ></div>
+                            )}
+                            {sectionImages.length > 7 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[7]}')` }}
+                              ></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    } else if (remainingImages >= 2) {
+                      // Section with 2-3 images
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[1]}')` }}
+                            ></div>
+                          </div>
+                          
+                          {sectionImages.length > 2 && (
+                            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[2]}')` }}
+                              ></div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      // Section with 1 image
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          <div className="w-full grid grid-cols-1 gap-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })}
                 </div>
-
-                {/* ---- SECTION 2 ---- */}
-                {galleryImages.guest.length > 2 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {/* Left Wide Box */}
-                    <div 
-                      className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.guest[2]}')` }}
-                    ></div>
-
-                    {/* Right Stacked Boxes */}
-                    <div className="flex flex-col gap-4">
-                      {galleryImages.guest.length > 3 && (
-                        <div 
-                          className="h-[240px] bg-cover bg-center rounded-2xl"
-                          style={{ backgroundImage: `url('${galleryImages.guest[3]}')` }}
-                        ></div>
-                      )}
-                      {galleryImages.guest.length > 4 && (
-                        <div 
-                          className="h-[240px] bg-cover bg-center rounded-2xl"
-                          style={{ backgroundImage: `url('${galleryImages.guest[4]}')` }}
-                        ></div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* ---- SECTION 3 ---- */}
-                {galleryImages.guest.length > 5 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div 
-                      className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.guest[5]}')` }}
-                    ></div>
-                    {galleryImages.guest.length > 6 && (
-                      <div 
-                        className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.guest[6]}')` }}
-                      ></div>
-                    )}
-                  </div>
-                )}
-
-                {/* ---- SECTION 4 ---- */}
-                {galleryImages.guest.length > 7 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {/* Left Stacked Boxes */}
-                    <div className="flex flex-col gap-4">
-                      {galleryImages.guest.length > 7 && (
-                        <div 
-                          className="h-[240px] bg-cover bg-center rounded-2xl"
-                          style={{ backgroundImage: `url('${galleryImages.guest[7]}')` }}
-                        ></div>
-                      )}
-                      {galleryImages.guest.length > 8 && (
-                        <div 
-                          className="h-[240px] bg-cover bg-center rounded-2xl"
-                          style={{ backgroundImage: `url('${galleryImages.guest[8]}')` }}
-                        ></div>
-                      )}
-                    </div>
-
-                    {/* Right Wide Box */}
-                    {galleryImages.guest.length > 9 && (
-                      <div 
-                        className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.guest[9]}')` }}
-                      ></div>
-                    )}
-                  </div>
-                )}
-
-                {/* ---- SECTION 5 ---- */}
-                {galleryImages.guest.length > 10 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div 
-                      className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.guest[10]}')` }}
-                    ></div>
-                    {galleryImages.guest.length > 11 && (
-                      <div 
-                        className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.guest[11]}')` }}
-                      ></div>
-                    )}
-                  </div>
-                )}
-
-                {/* ---- SECTION 6 ---- */}
-                {galleryImages.guest.length > 12 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    {galleryImages.guest.length > 12 && (
-                      <div 
-                        className="h-[300px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.guest[12]}')` }}
-                      ></div>
-                    )}
-                    {galleryImages.guest.length > 13 && (
-                      <div 
-                        className="h-[300px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.guest[13]}')` }}
-                      ></div>
-                    )}
-                    {galleryImages.guest.length > 14 && (
-                      <div 
-                        className="h-[300px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.guest[14]}')` }}
-                      ></div>
-                    )}
-                  </div>
-                )}
               </>
             ) : (
               <div className="text-center py-10">
@@ -312,86 +352,171 @@ const GalleryPage = () => {
           <div className="w-full">
             {galleryImages.homestay.length > 0 ? (
               <>
-                {/* ---- SECTION 1 ---- */}
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div 
-                    className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                    style={{ backgroundImage: `url('${galleryImages.homestay[0]}')` }}
-                  ></div>
-                  {galleryImages.homestay.length > 1 && (
-                    <div 
-                      className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.homestay[1]}')` }}
-                    ></div>
-                  )}
+                {/* Dynamic rendering for all homestay images */}
+                <div className="space-y-6">
+                  {/* Process images in groups of 8 */}
+                  {Array.from({ length: Math.ceil(galleryImages.homestay.length / 8) }, (_, sectionIndex) => {
+                    const startIndex = sectionIndex * 8;
+                    const remainingImages = galleryImages.homestay.length - startIndex;
+                    const endIndex = Math.min(startIndex + 8, galleryImages.homestay.length);
+                    
+                    // Get images for this section
+                    const sectionImages = galleryImages.homestay.slice(startIndex, endIndex);
+                    
+                    if (remainingImages >= 8) {
+                      // Full section with 8 images
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          {/* Row with 2 large images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[1]}')` }}
+                            ></div>
+                          </div>
+                          
+                          {/* Row with 1 wide and 2 small images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div 
+                              className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[2]}')` }}
+                            ></div>
+                            <div className="flex flex-col gap-4">
+                              <div 
+                                className="h-[240px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[3]}')` }}
+                              ></div>
+                              <div 
+                                className="h-[240px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[4]}')` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          {/* Row with 3 small images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div 
+                              className="h-[300px] bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[5]}')` }}
+                            ></div>
+                            {sectionImages.length > 6 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[6]}')` }}
+                              ></div>
+                            )}
+                            {sectionImages.length > 7 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[7]}')` }}
+                              ></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    } else if (remainingImages >= 4) {
+                      // Section with 4-7 images
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          {/* Row with 2 images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[1]}')` }}
+                            ></div>
+                          </div>
+                          
+                          {/* Row with 1 wide and 1-2 small images */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div 
+                              className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[2]}')` }}
+                            ></div>
+                            <div className="flex flex-col gap-4">
+                              <div 
+                                className="h-[240px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[3]}')` }}
+                              ></div>
+                              {sectionImages.length > 4 && (
+                                <div 
+                                  className="h-[240px] bg-cover bg-center rounded-2xl"
+                                  style={{ backgroundImage: `url('${sectionImages[4]}')` }}
+                                ></div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Row with remaining images (for 5-7 total) */}
+                          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            {sectionImages.length > 5 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[5]}')` }}
+                              ></div>
+                            )}
+                            {sectionImages.length > 6 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[6]}')` }}
+                              ></div>
+                            )}
+                            {sectionImages.length > 7 && (
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[7]}')` }}
+                              ></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    } else if (remainingImages >= 2) {
+                      // Section with 2-3 images
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[1]}')` }}
+                            ></div>
+                          </div>
+                          
+                          {sectionImages.length > 2 && (
+                            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div 
+                                className="h-[300px] bg-cover bg-center rounded-2xl"
+                                style={{ backgroundImage: `url('${sectionImages[2]}')` }}
+                              ></div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      // Section with 1 image
+                      return (
+                        <div key={sectionIndex} className="w-full">
+                          <div className="w-full grid grid-cols-1 gap-4">
+                            <div 
+                              className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
+                              style={{ backgroundImage: `url('${sectionImages[0]}')` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })}
                 </div>
-
-                {/* ---- SECTION 2 ---- */}
-                {galleryImages.homestay.length > 2 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {/* Left Wide Box */}
-                    <div 
-                      className="md:col-span-2 h-[500px] bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.homestay[2]}')` }}
-                    ></div>
-
-                    {/* Right Stacked Boxes */}
-                    <div className="flex flex-col gap-4">
-                      {galleryImages.homestay.length > 3 && (
-                        <div 
-                          className="h-[240px] bg-cover bg-center rounded-2xl"
-                          style={{ backgroundImage: `url('${galleryImages.homestay[3]}')` }}
-                        ></div>
-                      )}
-                      {galleryImages.homestay.length > 4 && (
-                        <div 
-                          className="h-[240px] bg-cover bg-center rounded-2xl"
-                          style={{ backgroundImage: `url('${galleryImages.homestay[4]}')` }}
-                        ></div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* ---- SECTION 3 ---- */}
-                {galleryImages.homestay.length > 5 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div 
-                      className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                      style={{ backgroundImage: `url('${galleryImages.homestay[5]}')` }}
-                    ></div>
-                    {galleryImages.homestay.length > 6 && (
-                      <div 
-                        className="h-72 md:h-96 bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.homestay[6]}')` }}
-                      ></div>
-                    )}
-                  </div>
-                )}
-
-                {/* ---- SECTION 4 ---- */}
-                {galleryImages.homestay.length > 7 && (
-                  <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {galleryImages.homestay.length > 7 && (
-                      <div 
-                        className="h-[300px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.homestay[7]}')` }}
-                      ></div>
-                    )}
-                    {galleryImages.homestay.length > 8 && (
-                      <div 
-                        className="h-[300px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.homestay[8]}')` }}
-                      ></div>
-                    )}
-                    {galleryImages.homestay.length > 9 && (
-                      <div 
-                        className="h-[300px] bg-cover bg-center rounded-2xl"
-                        style={{ backgroundImage: `url('${galleryImages.homestay[9]}')` }}
-                      ></div>
-                    )}
-                  </div>
-                )}
               </>
             ) : (
               <div className="text-center py-10">
