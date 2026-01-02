@@ -6,8 +6,10 @@ import ConfirmationDialog from "../../../../components/common/ConfirmationDialog
 import { supabase } from '@/app/lib/supabaseClient';
 import { updateImage, deleteImageFromStorage } from '@/app/lib/imageService';
 import { heroSectionApi } from '@/app/lib/apiClient';
+import { useAuth } from "../../../../../../context/AuthContext";
 
 const HeroSectionEditPage = () => {
+  const { token } = useAuth();
   const [images, setImages] = useState([]);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -17,12 +19,14 @@ const HeroSectionEditPage = () => {
   const [existingImageData, setExistingImageData] = useState([]);
   const [previousImageUrls, setPreviousImageUrls] = useState([]);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load existing data from API
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
-        const response = await heroSectionApi.get();
+        const response = await heroSectionApi.get(token);
         const { data } = response;
 
         if (data) {
@@ -81,25 +85,34 @@ const HeroSectionEditPage = () => {
   };
 
   const confirmDelete = async () => {
-    // Check if it's an existing image or newly uploaded
-    if (imageToDelete && imageToDelete.startsWith && imageToDelete.startsWith('existing-')) {
-      const imageToRemove = existingImageData.find(img => img.id === imageToDelete);
-      if (imageToRemove) {
-        // Delete from storage immediately using centralized service
-        const result = await deleteImageFromStorage(imageToRemove.url, supabase);
-        if (result && result.success) {
-          console.log('Image deleted from storage successfully');
-        } else {
-          console.error('Failed to delete image from storage:', result ? result.error : 'Unknown error');
-        }
-        // Remove from previousImageUrls tracking
-        setPreviousImageUrls(prev => prev.filter(url => url !== imageToRemove.url));
-      }      setExistingImageData(existingImageData.filter(image => image.id !== imageToDelete));
-    } else {
-      setImages(images.filter(image => image.id !== imageToDelete));
+    setIsDeleting(true);
+    try {
+      // Check if it's an existing image or newly uploaded
+      if (imageToDelete && imageToDelete.startsWith && imageToDelete.startsWith('existing-')) {
+        const imageToRemove = existingImageData.find(img => img.id === imageToDelete);
+        if (imageToRemove) {
+          // Delete from storage immediately using centralized service
+          const result = await deleteImageFromStorage(imageToRemove.url, supabase);
+          if (result && result.success) {
+            console.log('Image deleted from storage successfully');
+          } else {
+            console.error('Failed to delete image from storage:', result ? result.error : 'Unknown error');
+          }
+          // Remove from previousImageUrls tracking
+          setPreviousImageUrls(prev => prev.filter(url => url !== imageToRemove.url));
+        }      setExistingImageData(existingImageData.filter(image => image.id !== imageToDelete));
+      } else {
+        setImages(images.filter(image => image.id !== imageToDelete));
+      }
+      setShowDeleteDialog(false);
+      setImageToDelete(null);
+      showToast('Image deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      showToast('Error deleting image: ' + error.message, 'error');
+    } finally {
+      setIsDeleting(false);
     }
-    setShowDeleteDialog(false);
-    setImageToDelete(null);
   };
 
   const openSaveDialog = (e) => {
@@ -115,6 +128,8 @@ const HeroSectionEditPage = () => {
   };
 
   const confirmSave = async () => {
+    if (isSaving) return; // Prevent multiple saves
+    setIsSaving(true);
     try {
       // Upload new images to Supabase storage
       const imageUrls = [];
@@ -126,6 +141,14 @@ const HeroSectionEditPage = () => {
       const newImageUrls = [];
       for (const image of images) {
         if (image.file) {
+          // Check if the same image file is being uploaded again (duplicate check)
+          const fileName = image.file.name;
+          const isDuplicate = previousImageUrls.some(url => url && url.includes(fileName));
+          if (isDuplicate) {
+            showToast(`Image ${image.file.name} already saved. Using existing copy.`, 'info');
+            continue;
+          }
+          
           // Use centralized upload service
           const uploadResult = await updateImage(image.file, null, 'hero', supabase);
           
@@ -148,7 +171,7 @@ const HeroSectionEditPage = () => {
       };
 
       // Save using API client
-      await heroSectionApi.update(heroData);
+      await heroSectionApi.update(heroData, token);
 
       // Clean up ALL old images from storage that are no longer used
       // This includes both previous images and any images that were replaced
@@ -175,6 +198,8 @@ const HeroSectionEditPage = () => {
     } catch (error) {
       console.error('Save error:', error);
       showToast('Error saving changes', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -332,6 +357,7 @@ const HeroSectionEditPage = () => {
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"
+        isLoading={isDeleting}
       />
 
       {/* Save Confirmation Dialog */}
@@ -344,6 +370,7 @@ const HeroSectionEditPage = () => {
         confirmText="Save"
         cancelText="Cancel"
         type="info"
+        isLoading={isSaving}
       />
     </div>
   );

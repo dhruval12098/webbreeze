@@ -6,8 +6,10 @@ import ConfirmationDialog from "../../../../components/common/ConfirmationDialog
 import { updateImage, deleteImageFromStorage } from '@/app/lib/imageService';
 import { nearbyPlacesApi } from '@/app/lib/apiClient';
 import { supabase } from '@/app/lib/supabaseClient';
+import { useAuth } from "../../../../../../context/AuthContext";
 
 const NearbyPlacesEditPage = () => {
+  const { token } = useAuth();
   // Initialize state for three nearby places with completely isolated objects
   const [nearbyPlaces, setNearbyPlaces] = useState([
     { id: 1, name: "", description: "", image: null },
@@ -30,7 +32,7 @@ const NearbyPlacesEditPage = () => {
   useEffect(() => {
     const fetchNearbyPlaces = async () => {
       try {
-        const response = await nearbyPlacesApi.getAll();
+        const response = await nearbyPlacesApi.getAll({}, token);
         const { data } = response;
 
         if (data && data.length > 0) {
@@ -260,6 +262,7 @@ const NearbyPlacesEditPage = () => {
 
   // Handle save action - renamed from handleSave to confirmSave for consistency
   const confirmSave = async () => {
+    if (isSaving) return; // Prevent multiple saves
     setIsSaving(true);
     try {
       // Track all image URLs for cleanup
@@ -271,6 +274,13 @@ const NearbyPlacesEditPage = () => {
 
         // Handle image upload if new image is provided
         if (place.image && place.image.file) {
+          // Check if the same image file is being uploaded again (duplicate check)
+          if (place.image.isExisting && place.image.url && place.image.file.name === place.image.url.split('/').pop()) {
+            showToast(`Image ${place.image.file.name} already saved. Using existing copy.`, 'info');
+            imageUrl = place.image.url;
+            continue;
+          }
+          
           // Use centralized image service for upload
           const uploadResult = await updateImage(
             place.image.file, 

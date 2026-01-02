@@ -6,6 +6,7 @@ import ConfirmationDialog from "../../../../components/common/ConfirmationDialog
 import { supabase } from '@/app/lib/supabaseClient';
 import { updateImage, deleteImageFromStorage } from '@/app/lib/imageService';
 import { roomApi } from '@/app/lib/apiClient';
+import { useAuth } from "../../../../../../context/AuthContext";
 
 // Debug the Supabase client import
 console.log('Supabase client imported:', supabase);
@@ -14,11 +15,14 @@ if (supabase) {
 }
 
 const RoomDetailsEditPage = () => {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("details"); // Default to details tab
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [imageToDelete, setImageToDelete] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', type: '' }); // Add toast state for notifications
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Room Details State
   const [roomDetails, setRoomDetails] = useState({
@@ -30,12 +34,20 @@ const RoomDetailsEditPage = () => {
   });
   
   const [previousImageUrls, setPreviousImageUrls] = useState(Array(5).fill(null));
+  const [originalRoomDetails, setOriginalRoomDetails] = useState({
+    title: "",
+    label: "",
+    price: "",
+    description: "",
+    images: Array(5).fill(null)
+  });
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Load existing data from API
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        const response = await roomApi.getAll();
+        const response = await roomApi.getAll(token);
         const { data } = response;
 
         if (data && data.length > 0) {
@@ -62,6 +74,21 @@ const RoomDetailsEditPage = () => {
             room.image4_url || null,
             room.image5_url || null
           ]);
+          
+          // Set original values for change tracking
+          setOriginalRoomDetails({
+            title: room.title || "",
+            label: room.label || "",
+            price: room.price || "",
+            description: room.description || "",
+            images: [
+              room.image1_url ? { url: room.image1_url, isExisting: true } : null,
+              room.image2_url ? { url: room.image2_url, isExisting: true } : null,
+              room.image3_url ? { url: room.image3_url, isExisting: true } : null,
+              room.image4_url ? { url: room.image4_url, isExisting: true } : null,
+              room.image5_url ? { url: room.image5_url, isExisting: true } : null
+            ]
+          });
         }
       } catch (error) {
         console.error('Error fetching room data:', error);
@@ -99,6 +126,48 @@ const RoomDetailsEditPage = () => {
       setToast({ show: false, message: '', type: '' });
     }, 3000);
   };
+  
+  // Helper function to check if an image has changed
+  const isImageChanged = (current, original) => {
+    // New upload
+    if (current?.file) return true;
+
+    // Removed
+    if (!current && original) return true;
+
+    // Added
+    if (current && !original) return true;
+
+    // Same URL → NOT changed
+    if (current?.url && original?.url) {
+      return current.url !== original.url;
+    }
+
+    return false;
+  };
+  
+  // Check if there are changes compared to original values
+  const checkForChanges = () => {
+    // Check text fields
+    const textFieldsChanged = 
+      roomDetails.title !== originalRoomDetails.title ||
+      roomDetails.label !== originalRoomDetails.label ||
+      roomDetails.price !== originalRoomDetails.price ||
+      roomDetails.description !== originalRoomDetails.description;
+    
+    // Check image fields
+    const imagesChanged = originalRoomDetails.images.some((original, index) => {
+      const current = roomDetails.images[index];
+      return isImageChanged(current, original);
+    });
+    
+    setHasChanges(textFieldsChanged || imagesChanged);
+  };
+  
+  // Update hasChanges when roomDetails change
+  useEffect(() => {
+    checkForChanges();
+  }, [roomDetails]);
 
   // Open delete confirmation dialog
   const openDeleteDialog = (index) => {
@@ -108,6 +177,7 @@ const RoomDetailsEditPage = () => {
 
   // Confirm image deletion - FIXED to use previousImageUrls and delete immediately
   const confirmDelete = async () => {
+    setIsDeleting(true);
     if (imageToDelete !== null) {
       try {
         // CRITICAL FIX: Use previousImageUrls instead of current image URL
@@ -132,7 +202,7 @@ const RoomDetailsEditPage = () => {
           // Also update the database to remove the URL reference immediately
           try {
             // Get the current room data
-            const response = await roomApi.getAll();
+            const response = await roomApi.getAll(token);
             const { data: existingData } = response;
             
             if (existingData && existingData.length > 0) {
@@ -142,7 +212,7 @@ const RoomDetailsEditPage = () => {
               updateData[imageFieldNames[imageToDelete]] = null;
               
               // Update the database
-              await roomApi.update(existingData[0].id, updateData);
+              await roomApi.update(existingData[0].id, updateData, token);
               console.log('Database updated to remove image reference');
             }
           } catch (dbError) {
@@ -167,6 +237,20 @@ const RoomDetailsEditPage = () => {
         newPreviousUrls[imageToDelete] = null;
         setPreviousImageUrls(newPreviousUrls);
         
+        // Normalize roomDetails.images to match the deletion
+        setRoomDetails(prev => {
+          const newImages = [...prev.images];
+          newImages[imageToDelete] = null;
+          return { ...prev, images: newImages };
+        });
+        
+        // Normalize originalRoomDetails to match the deletion
+        setOriginalRoomDetails(prev => {
+          const newImages = [...prev.images];
+          newImages[imageToDelete] = null;
+          return { ...prev, images: newImages };
+        });
+        
         setShowDeleteDialog(false);
         setImageToDelete(null);
         showToast('Image deleted successfully!', 'success');
@@ -175,6 +259,8 @@ const RoomDetailsEditPage = () => {
         showToast('Error deleting image: ' + error.message, 'error');
         setShowDeleteDialog(false);
         setImageToDelete(null);
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
@@ -204,36 +290,48 @@ const RoomDetailsEditPage = () => {
 
   // Confirm save action - Enhanced version with proper image handling
   const confirmSave = async () => {
+    if (isSaving) return; // Prevent multiple saves
+    
+    // Don't save if there are no changes
+    if (!hasChanges) {
+      setShowSaveDialog(false);
+      return;
+    }
+    
+    setIsSaving(true);
     try {
       // Handle image updates with automatic cleanup for each image slot
-      const imageUrls = [];
+      const imageUrls = [...previousImageUrls]; // Start with existing URLs
       
       for (let i = 0; i < 5; i++) {
-        const image = roomDetails.images[i];
-        const previousUrl = previousImageUrls[i];
+        const current = roomDetails.images[i];
+        const original = originalRoomDetails.images[i];
         
-        // Only process image update if there's a new file for this specific slot
-        if (image?.file) {
-          // Use updateImage function which handles both deletion and upload
-          const imageResult = await updateImage(
-            image.file, 
-            previousUrl, 
-            'rooms',
-            supabase
-          );
-          
-          if (!imageResult.success) {
-            console.error(`Error processing image for slot ${i}:`, imageResult.error);
-            showToast(`Error processing image for slot ${i + 1}: ` + imageResult.error, 'error');
-            // Don't continue with save if there's an error
-            return;
-          }
-          
-          // Set the new image URL
-          imageUrls[i] = imageResult.newImageUrl;
-        } else {
-          // If no new file for this slot, keep the existing URL or null
-          imageUrls[i] = image?.isExisting ? image.url : null;
+        // 🚫 Absolutely never re-upload if there's no new file
+        if (!current?.file) {
+          imageUrls[i] = original?.url || null;
+          continue;
+        }
+        
+        const oldUrl = original?.url || null;
+
+        const result = await updateImage(
+          current.file,
+          null,            // 🚫 do NOT pass old URL here anymore
+          'rooms',
+          supabase
+        );
+        
+        if (!result.success) {
+          showToast(`Failed to upload image ${i + 1}`, 'error');
+          return;
+        }
+        
+        imageUrls[i] = result.newImageUrl;
+
+        // 🧹 Delete the old image AFTER successful upload
+        if (oldUrl) {
+          await deleteImageFromStorage(oldUrl, supabase);
         }
       }
       
@@ -251,25 +349,42 @@ const RoomDetailsEditPage = () => {
       };
 
       // Check if record exists
-      const response = await roomApi.getAll();
+      const response = await roomApi.getAll(token);
       const { data: existingData } = response;
-
+      
       if (existingData && existingData.length > 0) {
         // Update existing record
-        await roomApi.update(existingData[0].id, roomData);
+        await roomApi.update(existingData[0].id, roomData, token);
       } else {
         // Insert new record
-        await roomApi.create(roomData);
+        await roomApi.create(roomData, token);
       }
 
       // Update previous image URLs
       setPreviousImageUrls([...imageUrls]);
+      
+      // Update original values to current values after successful save
+      setOriginalRoomDetails({
+        title: roomDetails.title,
+        label: roomDetails.label,
+        price: roomDetails.price,
+        description: roomDetails.description,
+        images: imageUrls.map(url => url ? { url, isExisting: true } : null) // Use the saved URLs
+      });
+      
+      // Normalize roomDetails.images to match the saved state
+      setRoomDetails(prev => ({
+        ...prev,
+        images: imageUrls.map(url => url ? { url, isExisting: true } : null)
+      }));
       
       setShowSaveDialog(false);
       showToast('Room details saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving data:', error);
       showToast('Error saving data', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -449,9 +564,10 @@ const RoomDetailsEditPage = () => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="bg-[#0A3D2E] text-white px-6 py-2 rounded-xl hover:bg-[#082f24] transition"
+                disabled={!hasChanges}
+                className={`${!hasChanges ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#0A3D2E] hover:bg-[#082f24]'} text-white px-6 py-2 rounded-xl transition`}
               >
-                Save Changes
+                {hasChanges ? 'Save Changes' : 'No Changes'}
               </button>
             </div>
           )}
@@ -471,6 +587,7 @@ const RoomDetailsEditPage = () => {
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"
+        isLoading={isDeleting}
       />
 
       {/* Save Confirmation Dialog */}
@@ -483,6 +600,7 @@ const RoomDetailsEditPage = () => {
         confirmText="Save"
         cancelText="Cancel"
         type="info"
+        isLoading={isSaving}
       />
       
       {/* Toast Notification */}

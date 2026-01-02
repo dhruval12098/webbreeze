@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { X, Trash2 } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
+import { useAuth } from "../../../../../../context/AuthContext";
 
 const ImageGalleryEditPage = () => {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("guest"); // Default to guest gallery
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -98,6 +100,9 @@ const ImageGalleryEditPage = () => {
           // Upload to API
           const response = await fetch('/api/gallery-images', {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
             body: formData
           });
 
@@ -151,7 +156,8 @@ const ImageGalleryEditPage = () => {
           const response = await fetch('/api/gallery-images', {
             method: 'DELETE',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
               imageUrl: image.url

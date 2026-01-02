@@ -11,7 +11,8 @@ const ConfirmationDialog = ({
   message, 
   confirmText = "Confirm", 
   cancelText = "Cancel",
-  type = "info" // info, warning, danger
+  type = "info", // info, warning, danger
+  isLoading = false
 }) => {
   if (!isOpen) return null;
 
@@ -63,9 +64,10 @@ const ConfirmationDialog = ({
             </button>
             <button
               onClick={onConfirm}
-              className={`${getTypeStyles()} text-white px-4 py-2 rounded-xl transition`}
+              disabled={isLoading}
+              className={`${getTypeStyles()} text-white px-4 py-2 rounded-xl transition ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {confirmText}
+              {isLoading ? 'Processing...' : confirmText}
             </button>
           </div>
         </div>

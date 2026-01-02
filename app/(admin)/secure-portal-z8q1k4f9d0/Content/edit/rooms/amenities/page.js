@@ -262,6 +262,7 @@ const RoomAmenitiesEditPage = () => {
 
   // Confirm save action - now actually saves all amenities
   const confirmSave = async () => {
+    if (isSaving) return; // Prevent multiple saves
     setIsSaving(true);
     setShowSaveDialog(false);
     

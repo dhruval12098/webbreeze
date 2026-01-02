@@ -9,18 +9,26 @@
  * @param {string} method - HTTP method (GET, POST, PUT, DELETE)
  * @param {object} data - Data to send with the request (for POST/PUT)
  * @param {object} headers - Additional headers to include
+ * @param {string} token - Optional admin token for authentication
  * @returns {Promise<object>} - The response data
  */
-async function apiCall(url, method = 'GET', data = null, headers = {}) {
+async function apiCall(url, method = 'GET', data = null, headers = {}, token = null) {
   // Ensure we're using the correct base URL for API calls
   const apiUrl = url.startsWith('/') ? url : `/${url}`;
   
+  // Prepare headers with authentication if token is provided
+  const finalHeaders = {
+    'Content-Type': 'application/json',
+    ...headers
+  };
+  
+  if (token) {
+    finalHeaders['Authorization'] = `Bearer ${token}`;
+  }
+  
   const config = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    }
+    headers: finalHeaders
   };
 
   if (data) {
@@ -84,19 +92,19 @@ async function apiCall(url, method = 'GET', data = null, headers = {}) {
  */
 export const roomApi = {
   // Get all rooms
-  getAll: () => apiCall('/api/rooms'),
+  getAll: (token = null) => apiCall('/api/rooms', 'GET', null, {}, token),
   
   // Get a specific room by ID
-  getById: (id) => apiCall(`/api/rooms/${id}`),
+  getById: (id, token = null) => apiCall(`/api/rooms/${id}`, 'GET', null, {}, token),
   
   // Create a new room
-  create: (roomData) => apiCall('/api/rooms', 'POST', roomData),
+  create: (roomData, token = null) => apiCall('/api/rooms', 'POST', roomData, {}, token),
   
   // Update a room by ID
-  update: (id, roomData) => apiCall(`/api/rooms/${id}`, 'PUT', roomData),
+  update: (id, roomData, token = null) => apiCall(`/api/rooms/${id}`, 'PUT', roomData, {}, token),
   
   // Delete a room by ID
-  delete: (id) => apiCall(`/api/rooms/${id}`, 'DELETE')
+  delete: (id, token = null) => apiCall(`/api/rooms/${id}`, 'DELETE', null, {}, token)
 };
 
 /**
@@ -104,10 +112,10 @@ export const roomApi = {
  */
 export const heroSectionApi = {
   // Get hero section data
-  get: () => apiCall('/api/hero-section'),
+  get: (token = null) => apiCall('/api/hero-section', 'GET', null, {}, token),
   
   // Update hero section data
-  update: (data) => apiCall('/api/hero-section', 'POST', data)
+  update: (data, token = null) => apiCall('/api/hero-section', 'POST', data, {}, token)
 };
 
 /**
@@ -115,19 +123,19 @@ export const heroSectionApi = {
  */
 export const nearbyPlacesApi = {
   // Get all nearby places
-  getAll: () => apiCall('/api/nearby-places'),
+  getAll: (token = null) => apiCall('/api/nearby-places', 'GET', null, {}, token),
   
   // Get a specific nearby place by ID
-  getById: (id) => apiCall(`/api/nearby-places/${id}`),
+  getById: (id, token = null) => apiCall(`/api/nearby-places/${id}`, 'GET', null, {}, token),
   
   // Create a new nearby place
-  create: (placeData) => apiCall('/api/nearby-places', 'POST', placeData),
+  create: (placeData, token = null) => apiCall('/api/nearby-places', 'POST', placeData, {}, token),
   
   // Update a nearby place by ID
-  update: (id, placeData) => apiCall(`/api/nearby-places/${id}`, 'PUT', placeData),
+  update: (id, placeData, token = null) => apiCall(`/api/nearby-places/${id}`, 'PUT', placeData, {}, token),
   
   // Delete a nearby place by ID
-  delete: (id) => apiCall(`/api/nearby-places/${id}`, 'DELETE')
+  delete: (id, token = null) => apiCall(`/api/nearby-places/${id}`, 'DELETE', null, {}, token)
 };
 
 /**
@@ -135,10 +143,10 @@ export const nearbyPlacesApi = {
  */
 export const ourStoryApi = {
   // Get our story section data
-  get: () => apiCall('/api/our-story'),
+  get: (token = null) => apiCall('/api/our-story', 'GET', null, {}, token),
   
   // Update our story section data
-  update: (data) => apiCall('/api/our-story', 'POST', data)
+  update: (data, token = null) => apiCall('/api/our-story', 'POST', data, {}, token)
 };
 
 /**
@@ -146,10 +154,10 @@ export const ourStoryApi = {
  */
 export const meetHostApi = {
   // Get meet host section data
-  get: () => apiCall('/api/meet-host'),
+  get: (token = null) => apiCall('/api/meet-host', 'GET', null, {}, token),
   
   // Update meet host section data
-  update: (data) => apiCall('/api/meet-host', 'POST', data)
+  update: (data, token = null) => apiCall('/api/meet-host', 'POST', data, {}, token)
 };
 
 /**
@@ -157,23 +165,23 @@ export const meetHostApi = {
  */
 export const guestReviewsApi = {
   // Get all guest reviews
-  getAll: (params = {}) => {
+  getAll: (params = {}, token = null) => {
     const queryParams = new URLSearchParams(params).toString();
     const url = queryParams ? `/api/guest-reviews?${queryParams}` : '/api/guest-reviews';
-    return apiCall(url);
+    return apiCall(url, 'GET', null, {}, token);
   },
   
   // Get a specific guest review by ID
-  getById: (id) => apiCall(`/api/guest-reviews/${id}`),
+  getById: (id, token = null) => apiCall(`/api/guest-reviews/${id}`, 'GET', null, {}, token),
   
   // Create a new guest review
-  create: (reviewData) => apiCall('/api/guest-reviews', 'POST', reviewData),
+  create: (reviewData, token = null) => apiCall('/api/guest-reviews', 'POST', reviewData, {}, token),
   
   // Update a guest review by ID
-  update: (id, reviewData) => apiCall(`/api/guest-reviews/${id}`, 'PUT', reviewData),
+  update: (id, reviewData, token = null) => apiCall(`/api/guest-reviews/${id}`, 'PUT', reviewData, {}, token),
   
   // Delete a guest review by ID
-  delete: (id) => apiCall(`/api/guest-reviews/${id}`, 'DELETE')
+  delete: (id, token = null) => apiCall(`/api/guest-reviews/${id}`, 'DELETE', null, {}, token)
 };
 
 /**
@@ -181,7 +189,7 @@ export const guestReviewsApi = {
  */
 export const imageApi = {
   // Delete an image by URL
-  delete: (imageUrl) => apiCall('/api/images/delete', 'DELETE', { imageUrl })
+  delete: (imageUrl, token = null) => apiCall('/api/images/delete', 'DELETE', { imageUrl }, {}, token)
   // Note: Image upload is more complex and typically handled directly in components
 };
 
