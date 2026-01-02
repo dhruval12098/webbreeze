@@ -41,8 +41,8 @@ const Page = () => {
       "postalCode": "688011",
       "addressCountry": "IN"
     },
-    "telephone": "+91-9XXXXXXXXX",
-    "email": "hello@breezeandgrains.com",
+    "telephone": "+91 99616 72656",
+    "email": "breezegrains@gmail.com",
     "geo": {
       "@type": "GeoCoordinates",
       "latitude": "9.4981",
@@ -85,7 +85,7 @@ const Page = () => {
             Have a question, want to check availability, or <br />
             need help planning your stay?
             <br />
-            Reach out anytime — we’re happy to assist.
+            Reach out anytime — we're happy to assist.
           </p>
         </div>
       </div>
@@ -106,7 +106,7 @@ const Page = () => {
               className="text-gray-800"
               style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
             >
-              +91 9XXXXXXXXX <br />
+              +91 99616 72656 <br />
               Available 8 AM – 10 PM IST
             </p>
           </div>
@@ -123,7 +123,7 @@ const Page = () => {
               className="text-gray-800"
               style={{ fontFamily: "Plus Jakarta Sans", color: "#594B00" }}
             >
-              hello@breezeandgrains.com <br />
+              breezegrains@gmail.com <br />
               We reply within a few hours
             </p>
           </div>

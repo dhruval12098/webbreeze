@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
+import Link from 'next/link';
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
@@ -13,21 +14,25 @@ const OverviewSection = () => {
       title: "Room's",
       description: "Comfortable stays with beautiful views",
       img: "/image/image1.jpg",
+      link: "/room",
     },
     {
       title: "Services",
       description: "Personal care, housekeeping, and warm hospitality",
       img: "/image/image2.jpg",
+      link: "/room#amenities",
     },
     {
       title: "Food",
       description: "Traditional Kerala meals made fresh",
       img: "/image/image3.jpg",
+      link: "/room#description",
     },
     {
       title: "Location",
       description: "Scenic surroundings and easy access",
       img: "/image/image4.jpg",
+      link: "/contact",
     },
   ];
 
@@ -78,16 +83,26 @@ const OverviewSection = () => {
 
   // GSAP DESKTOP ANIMATION
   useEffect(() => {
-    gsap.from(cardRefs.current, {
-      x: window.innerWidth,
-      duration: 1.1,
-      ease: "cubic-bezier(0.65, 0, 0.35, 1)",
-      stagger: 0.2,
-      scrollTrigger: {
-        trigger: scrollRef.current,
-        start: "top 80%",
-      },
-    });
+    // Animation that runs when component mounts or when it's in view
+    const animateCards = () => {
+      // Reset cards to initial position
+      gsap.set(cardRefs.current, { x: window.innerWidth });
+      
+      // Animate cards to final position
+      gsap.to(cardRefs.current, {
+        x: 0,
+        duration: 1.1,
+        ease: "cubic-bezier(0.65, 0, 0.35, 1)",
+        stagger: 0.2,
+      });
+    };
+    
+    // Run animation after a short delay to ensure DOM is ready
+    const timer = setTimeout(animateCards, 100);
+    
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -138,60 +153,61 @@ const OverviewSection = () => {
           const shadow = !isDark ? "shadow-xl" : "";
 
           return (
-            <div
-              key={index}
-              ref={addToRefs}
-              className={`flex-shrink-0 w-96 h-[400px] rounded-2xl p-2 flex flex-col ${shadow} ${
-                index % 2 === 0 ? "mt-0" : "mt-24"
-              }`}
-              style={{ backgroundColor: bgColor }}
-            >
-              {/* IMAGE */}
+            <Link href={card.link} key={index} className="block">
               <div
-                className="h-60 rounded-2xl mb-2 bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${card.img})`,
-                }}
-              ></div>
+                ref={addToRefs}
+                className={`flex-shrink-0 w-96 h-[400px] rounded-2xl p-2 flex flex-col ${shadow} ${
+                  index % 2 === 0 ? "mt-0" : "mt-24"
+                }`}
+                style={{ backgroundColor: bgColor }}
+              >
+                {/* IMAGE */}
+                <div
+                  className="h-60 rounded-2xl mb-2 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${card.img})`,
+                  }}
+                ></div>
 
-              {/* TEXT */}
-              <div className="relative flex-1 pb-4 px-2 flex flex-col justify-between">
-                <div>
-                  <h3
-                    className={`text-2xl mb-2 italic ${textColor}`}
-                    style={{ fontFamily: "Playfair Display" }}
-                  >
-                    {card.title}
-                  </h3>
+                {/* TEXT */}
+                <div className="relative flex-1 pb-4 px-2 flex flex-col justify-between">
+                  <div>
+                    <h3
+                      className={`text-2xl mb-2 italic ${textColor}`}
+                      style={{ fontFamily: "Playfair Display" }}
+                    >
+                      {card.title}
+                    </h3>
 
-                  <p
-                    className={`text-sm pr-10 ${
-                      textColor === "text-white"
-                        ? "text-gray-100"
-                        : "text-gray-800"
-                    }`}
-                    style={{ fontFamily: "Plus Jakarta Sans" }}
-                  >
-                    "{card.description}"
-                  </p>
-                </div>
+                    <p
+                      className={`text-sm pr-10 ${
+                        textColor === "text-white"
+                          ? "text-gray-100"
+                          : "text-gray-800"
+                      }`}
+                      style={{ fontFamily: "Plus Jakarta Sans" }}
+                    >
+                      "{card.description}"
+                    </p>
+                  </div>
 
-                {/* Arrow */}
-                <div className="absolute bottom-2 right-2">
-                  <div
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                      isDark ? "border-white" : "border-black"
-                    }`}
-                  >
-                    <ArrowUpRight
-                      className="w-4 h-4"
-                      strokeWidth={2}
-                      color={isDark ? "white" : "black"}
-                    />
+                  {/* Arrow */}
+                  <div className="absolute bottom-2 right-2">
+                    <div
+                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                        isDark ? "border-white" : "border-black"
+                      }`}
+                    >
+                      <ArrowUpRight
+                        className="w-4 h-4"
+                        strokeWidth={2}
+                        color={isDark ? "white" : "black"}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -213,7 +229,7 @@ const OverviewSection = () => {
               const isDark = index === 0 || index === 2;
 
               return (
-                <div key={index} className="min-w-full px-2">
+                <Link href={card.link} key={index} className="min-w-full px-2 block">
                   <div
                     className="rounded-3xl p-3"
                     style={{
@@ -246,7 +262,7 @@ const OverviewSection = () => {
                       "{card.description}"
                     </p>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

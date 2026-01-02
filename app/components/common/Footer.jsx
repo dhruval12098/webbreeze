@@ -246,19 +246,13 @@ const Footer = () => {
               className="flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-2 text-base sm:text-lg"
               style={{ fontFamily: "Plus Jakarta Sans" }}
             >
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
-                LinkedIn
-                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  ↗
-                </span>
-              </a>
-              <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+              <a href="https://wa.me/919961672656" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
                 Whatsapp
                 <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   ↗
                 </span>
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
+              <a href="http://instagram.com/breezeandgrains/?hl=en" target="_blank" rel="noopener noreferrer" className="text-white hover:text-white group transition-colors duration-300 relative pr-4">
                 Instagram
                 <span className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   ↗

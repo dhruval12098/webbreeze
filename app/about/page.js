@@ -36,14 +36,14 @@ const Page = () => {
     "description": "A peaceful homestay tucked along the calm backwaters of Kerala. At Breeze & Grains, we believe a stay should feel like a slow breath — warm, natural, and unhurried.",
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "Alappuzha",
+      "streetAddress": "Paruvaparamplil House, Post, Chennamkary",
       "addressLocality": "Alappuzha",
       "addressRegion": "Kerala",
-      "postalCode": "688011",
+      "postalCode": "688501",
       "addressCountry": "IN"
     },
-    "telephone": "+91-9XXXXXXXXX",
-    "email": "hello@breezeandgrains.com",
+    "telephone": "+91 99616 72656",
+    "email": "breezegrains@gmail.com",
     "geo": {
       "@type": "GeoCoordinates",
       "latitude": "9.4981",
@@ -222,7 +222,7 @@ const Page = () => {
         {/* Map container with professional styling */}
         <div className="absolute inset-0 bg-[#173A00] rounded-3xl overflow-hidden">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3900.123456789!2d76.365!3d9.567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b082123456789%3A0xabcdef123456789!2sBreeze%20%26%20Grains!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3900.123456789!2d76.3388!3d9.4981!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b082123456789%3A0xabcdef123456789!2sParuvaparamplil+House,+Post,+Chennamkary,+Alappuzha,+Kerala+688501!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
             width="100%"
             height="100%"
             style={{ border: 0 }}
@@ -235,6 +235,9 @@ const Page = () => {
         {/* Subtle border effect */}
         <div className="absolute inset-0 rounded-3xl border border-white/20 pointer-events-none"></div>
       </section>
+
+      {/* Spacer after map section */}
+      <div className="h-20"></div>
 
     </main>
   );
