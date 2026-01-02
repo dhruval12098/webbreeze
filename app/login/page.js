@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/context/AuthContext'
+import GoogleLoginButton from '@/components/common/GoogleLoginButton'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -193,12 +194,7 @@ export default function LoginPage() {
 
             {/* Social Login Buttons */}
             <div className="flex gap-3 mb-6 md:mb-8">
-              <button className="flex-1 py-3 bg-[#FFFBE6] hover:bg-[#594B00]/10 border border-[#594B00]/30 rounded-xl font-semibold text-[#173A00] transition-colors flex items-center justify-center">
-                Google
-              </button>
-              <button className="flex-1 py-3 bg-[#FFFBE6] hover:bg-[#594B00]/10 border border-[#594B00]/30 rounded-xl font-semibold text-[#173A00] transition-colors flex items-center justify-center">
-                Facebook
-              </button>
+              <GoogleLoginButton />
             </div>
 
             {/* Sign up link */}

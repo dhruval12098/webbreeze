@@ -87,7 +87,8 @@ export async function GET(request) {
     // Ensure clean data for JSON response
     const responsePayload = {
       success: true,
-      user: cleanUser
+      user: cleanUser,
+      expiresAt: session.expires_at
     };
     
     return new Response(
@@ -199,7 +200,8 @@ export async function PUT(request) {
     // Ensure clean data for JSON response
     const responsePayload = {
       success: true,
-      user: cleanUser
+      user: cleanUser,
+      expiresAt: session.expires_at
     };
     
     return new Response(
