@@ -78,7 +78,7 @@ export async function GET(request) {
     const cleanUser = {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name || user.full_name,
       created_at: new Date(user.created_at).toISOString(),
       updated_at: new Date(user.updated_at).toISOString(),
       is_active: user.is_active
@@ -191,7 +191,7 @@ export async function PUT(request) {
     const cleanUser = {
       id: updatedUser.id,
       email: updatedUser.email,
-      name: updatedUser.name,
+      name: updatedUser.name || updatedUser.full_name,
       created_at: new Date(updatedUser.created_at).toISOString(),
       updated_at: new Date(updatedUser.updated_at).toISOString(),
       is_active: updatedUser.is_active
