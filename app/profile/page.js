@@ -11,7 +11,7 @@ const Page = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
   const router = useRouter();
-  const { user, token, logout, updateUser, loading: authLoading } = useAuth();
+  const { user, token, logout, updateUser, loading: authLoading, isAdminAuthenticated, isUserAuthenticated } = useAuth();
 
   useEffect(() => {
     // Wait for auth context to finish loading
@@ -19,15 +19,21 @@ const Page = () => {
       return; // Don't do anything while auth is loading
     }
 
-    // Now check if user is authenticated
-    if (!token) {
+    // Redirect admin users to admin dashboard first
+    if (isAdminAuthenticated) {
+      router.push('/secure-portal-z8q1k4f9d0');
+      return;
+    }
+    
+    // Redirect to login if not authenticated as a user
+    if (!token || !isUserAuthenticated) {
       router.push('/login');
       return;
     }
     
     // Always fetch fresh user data from the API
     fetchUserData();
-  }, [token, authLoading, router]);
+  }, [token, authLoading, isAdminAuthenticated, isUserAuthenticated, router]);
 
   // Effect to handle auth state when user data fetch fails
   useEffect(() => {

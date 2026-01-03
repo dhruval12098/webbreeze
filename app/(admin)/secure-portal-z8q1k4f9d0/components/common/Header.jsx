@@ -12,18 +12,6 @@ const Header = () => {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Call admin logout API
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        await fetch("/api/admin/logout", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
-      }
-      
       // Clear auth data and redirect
       await logout();
       router.push("/admin-login");

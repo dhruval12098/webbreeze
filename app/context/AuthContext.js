@@ -31,45 +31,52 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // First try admin session (since admin sessions are more specific)
-      let response = await fetch('/api/admin/verify-session', {
-        headers: {
-          'Authorization': `Bearer ${storedToken}`
+      // Check token prefix to determine which session to verify
+      if (storedToken?.startsWith('admin_token_')) {
+        // Only try admin session for admin tokens
+        const response = await fetch('/api/admin/verify-session', {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Admin session is valid
+          const adminUser = { ...data.admin, isAdmin: true };
+          setToken(storedToken);
+          setUser(adminUser);
+          // Update localStorage with fresh data
+          saveAuthData(adminUser, storedToken, data.expiresAt);
+        } else {
+          // Admin session is invalid or expired
+          clearAuthData();
+          setToken(null);
+          setUser(null);
         }
-      });
-
-      let data = await response.json();
-
-      if (data.success) {
-        // Admin session is valid
-        const adminUser = { ...data.admin, isAdmin: true };
-        setToken(storedToken);
-        setUser(adminUser);
-        // Update localStorage with fresh data
-        saveAuthData(adminUser, storedToken, data.expiresAt);
-        return;
-      }
-
-      // If admin session fails, try regular user session
-      response = await fetch('/api/auth/verify-session', {
-        headers: {
-          'Authorization': `Bearer ${storedToken}`
-        }
-      });
-      
-      data = await response.json();
-
-      if (data.success) {
-        // User session is valid
-        setToken(storedToken);
-        setUser(data.user);
-        // Update localStorage with fresh data
-        saveAuthData(data.user, storedToken, data.expiresAt);
       } else {
-        // Both sessions are invalid or expired
-        clearAuthData();
-        setToken(null);
-        setUser(null);
+        // Only try user session for user tokens
+        const response = await fetch('/api/auth/verify-session', {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`
+          }
+        });
+        
+        const data = await response.json();
+
+        if (data.success) {
+          // User session is valid
+          setToken(storedToken);
+          setUser(data.user);
+          // Update localStorage with fresh data
+          saveAuthData(data.user, storedToken, data.expiresAt);
+        } else {
+          // User session is invalid or expired
+          clearAuthData();
+          setToken(null);
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('Session verification error:', error);
@@ -153,6 +160,8 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     loading,
     isAuthenticated: !!user,
+    isUserAuthenticated: !!user && !user.isAdmin,
+    isAdminAuthenticated: !!user && user.isAdmin,
     verifySession // Expose this for manual verification
   };
 
