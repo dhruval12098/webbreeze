@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { getAuthToken, getCurrentUser, clearAuthData, saveAuthData } from '@/app/lib/authUtils';
+import { getAuthToken, getCurrentUser, clearAuthData, saveAuthData, getAdminAuthToken, getExpiresAt } from '@/app/lib/authUtils';
 
 const AuthContext = createContext();
 
@@ -24,15 +24,33 @@ export const AuthProvider = ({ children }) => {
 
   const verifySession = async () => {
     try {
-      const storedToken = getAuthToken();
+      // Get both user and admin tokens to determine which session to verify
+      const userToken = getAuthToken(); // This will get the first available token
+      const adminToken = getAdminAuthToken();
+      
+      // Check if we're in an admin route context
+      const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.includes('/secure-portal');
+      
+      let storedToken = null;
+      
+      // If we're in an admin route, prioritize admin token
+      if (isAdminRoute && adminToken) {
+        storedToken = adminToken;
+      } else if (userToken) {
+        // Otherwise use user token if available
+        storedToken = userToken;
+      } else if (adminToken) {
+        // Fall back to admin token if no user token
+        storedToken = adminToken;
+      }
       
       if (!storedToken) {
         setLoading(false);
         return;
       }
 
-      // Check token prefix to determine which session to verify
-      if (storedToken?.startsWith('admin_token_')) {
+      // Check if this is an admin token by comparing with admin token
+      if (storedToken === adminToken) {
         // Only try admin session for admin tokens
         const response = await fetch('/api/admin/verify-session', {
           headers: {
@@ -51,7 +69,7 @@ export const AuthProvider = ({ children }) => {
           saveAuthData(adminUser, storedToken, data.expiresAt);
         } else {
           // Admin session is invalid or expired
-          clearAuthData();
+          clearAuthData(false, true); // Clear admin only
           setToken(null);
           setUser(null);
         }
@@ -82,7 +100,7 @@ export const AuthProvider = ({ children }) => {
             // Don't clear user data immediately to allow payment handler to complete
           } else {
             // Outside booking flow, clear the auth data as normal
-            clearAuthData();
+            clearAuthData(true, false); // Clear user only
             setToken(null);
             setUser(null);
           }
@@ -90,7 +108,11 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Session verification error:', error);
-      clearAuthData();
+      if (user?.isAdmin) {
+        clearAuthData(false, true); // Clear admin only
+      } else {
+        clearAuthData(true, false); // Clear user only
+      }
       setToken(null);
       setUser(null);
     } finally {
@@ -133,7 +155,11 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setToken(null);
-      clearAuthData();
+      if (user?.isAdmin) {
+        clearAuthData(false, true); // Clear admin only
+      } else {
+        clearAuthData(true, false); // Clear user only
+      }
     }
   };
 
@@ -141,7 +167,7 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
     if (token) {
       try {
-        const expiresAt = localStorage.getItem('token_expires');
+        const expiresAt = getExpiresAt();
         let parsedExpiresAt = null;
         
         if (expiresAt && expiresAt.startsWith('{') && expiresAt.endsWith('}')) {
@@ -153,11 +179,11 @@ export const AuthProvider = ({ children }) => {
           parsedExpiresAt = expiresAt;
         }
         
-        saveAuthData(userData, token, parsedExpiresAt);
+        saveAuthData({ ...userData, isAdmin: user?.isAdmin }, token, parsedExpiresAt);
       } catch (e) {
         // If parsing fails, try to use the raw value
-        const rawExpiresAt = localStorage.getItem('token_expires');
-        saveAuthData(userData, token, rawExpiresAt);
+        const rawExpiresAt = getExpiresAt();
+        saveAuthData({ ...userData, isAdmin: user?.isAdmin }, token, rawExpiresAt);
       }
     }
   };

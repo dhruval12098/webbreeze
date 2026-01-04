@@ -53,7 +53,7 @@ export async function GET(request) {
       .from('bookings')
       .select(`
         *,
-        users (name, email),
+        users (name, full_name, email),
         rooms (title)
       `)
       .order('created_at', { ascending: false });
@@ -94,7 +94,7 @@ export async function GET(request) {
         user_id: booking.user_id,
         room_id: booking.room_id,
         room_name: booking.rooms?.title || booking.room_id, // Use room title if available, otherwise use room_id
-        user_name: booking.users?.name || 'Unknown User',
+        user_name: booking.users?.name || booking.users?.full_name || 'Unknown User',
         user_email: booking.users?.email || 'N/A',
         check_in_date: booking.check_in_date,
         check_out_date: booking.check_out_date,

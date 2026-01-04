@@ -201,7 +201,7 @@ export async function GET(request, { params }) {
       .from('bookings')
       .select(`
         *,
-        users (name, email),
+        users (name, full_name, email),
         rooms (title)
       `)
       .eq('id', id)
@@ -241,7 +241,7 @@ export async function GET(request, { params }) {
       user_id: data.user_id,
       room_id: data.room_id,
       room_name: data.rooms?.title || data.room_id, // Use room title if available, otherwise use room_id
-      user_name: data.users?.name || 'Unknown User',
+      user_name: data.users?.name || data.users?.full_name || 'Unknown User',
       user_email: data.users?.email || 'N/A',
       check_in_date: data.check_in_date,
       check_out_date: data.check_out_date,
