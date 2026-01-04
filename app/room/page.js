@@ -202,7 +202,7 @@ const Page = () => {
                       </div>
                     </button>
                   </div>
-
+              
                   {/* BOOK NOW */}
                   <button
                     className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent hover:bg-[#F9F6F0] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
@@ -228,6 +228,15 @@ const Page = () => {
                   </button>
                 </div>
               </div>
+            </div>
+                        
+            {/* PAYMENT NOTE */}
+            <div className="mt-6 p-4 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
+              <p className="text-xs text-[#173A00] font-sans text-center" style={{ fontFamily: "Plus Jakarta Sans" }}>
+                <strong>Note:</strong><br />
+                • In case of payment issues, connect to the owner with payment screenshot or call them<br />
+                • If payment stops and you're back to steps, complete payment from the profile page
+              </p>
             </div>
 
             {/* AMENITIES */}
@@ -372,7 +381,16 @@ const Page = () => {
                 {roomData?.label || "Entire Homestay"}
               </span>
             </div>
-
+                        
+            {/* PAYMENT NOTE MOBILE */}
+            <div className="mt-6 p-4 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
+              <p className="text-xs text-[#173A00] font-sans text-center" style={{ fontFamily: "Plus Jakarta Sans" }}>
+                <strong>Note:</strong><br />
+                • In case of payment issues, connect to the owner with payment screenshot or call them<br />
+                • If payment stops and you're back to steps, complete payment from the profile page
+              </p>
+            </div>
+                        
             {/* Buttons */}
             <div className="mt-7 space-y-4">
               {/* CHECK AVAILABILITY */}
@@ -388,7 +406,7 @@ const Page = () => {
                   </div>
                 </button>
               </div>
-
+            
               {/* BOOK NOW */}
               <button
                 className="w-full border border-[#594B00] text-[#594B00] py-4 rounded-full flex justify-between items-center px-6 text-sm bg-transparent hover:bg-[#F9F6F0] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"

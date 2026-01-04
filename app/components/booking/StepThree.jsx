@@ -424,6 +424,15 @@ const StepThree = ({ goToStep }) => {
             >
               *Your booking will be confirmed upon successful payment.*
             </p>
+            
+            {/* PAYMENT NOTE */}
+            <div className="mt-6 p-4 bg-[#FFFBE6] rounded-lg border border-[#594B00]/30">
+              <p className="text-xs text-[#173A00] font-sans text-center" style={{ fontFamily: "Plus Jakarta Sans" }}>
+                <strong>Note:</strong><br />
+                • In case of payment issues, connect to the owner with payment screenshot or call them<br />
+                • If payment stops and you're back to steps, complete payment from the profile page
+              </p>
+            </div>
           </div>
         </div>
       </section>
