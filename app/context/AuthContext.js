@@ -73,9 +73,19 @@ export const AuthProvider = ({ children }) => {
           saveAuthData(data.user, storedToken, data.expiresAt);
         } else {
           // User session is invalid or expired
-          clearAuthData();
-          setToken(null);
-          setUser(null);
+          // Check if we're in a booking flow by checking for booking-related sessionStorage
+          const isBookingFlow = sessionStorage.getItem('bookingData') || sessionStorage.getItem('isPaymentProcessing');
+          
+          if (isBookingFlow) {
+            // During booking flow, preserve token temporarily to allow payment completion
+            setToken(storedToken);
+            // Don't clear user data immediately to allow payment handler to complete
+          } else {
+            // Outside booking flow, clear the auth data as normal
+            clearAuthData();
+            setToken(null);
+            setUser(null);
+          }
         }
       }
     } catch (error) {

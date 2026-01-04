@@ -18,16 +18,17 @@ const StepThree = ({ goToStep }) => {
     document.body.appendChild(script);
   }, []);
   
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated and not in payment processing
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    const isPaymentProcessing = sessionStorage.getItem('isPaymentProcessing');
+    if (!loading && !isAuthenticated && !isPaymentProcessing) {
       alert('Please log in to continue with your booking');
       window.location.href = '/login';
     }
   }, [isAuthenticated, loading]);
   
-  // Don't render if not authenticated
-  if (!loading && !isAuthenticated) {
+  // Don't render if not authenticated and not in payment processing
+  if (!loading && !isAuthenticated && !sessionStorage.getItem('isPaymentProcessing')) {
     return null; // The redirect will happen before this renders
   }
   
@@ -80,6 +81,39 @@ const StepThree = ({ goToStep }) => {
     }
 
     try {
+      // First, create the booking with pending status
+      const bookingResponse = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          room_id: bookingData.room_id,
+          check_in_date: bookingData.checkInDate,
+          check_out_date: bookingData.checkOutDate,
+          check_in_time: checkInTime24,
+          total_guests: bookingData.totalGuests || 1,
+          special_requests: bookingData.specialRequests || '',
+          phone: bookingData.phone || '',
+          total_amount: bookingData.totalAmount,
+          payment_status: 'pending',
+          booking_status: 'Pending',
+          razorpay_order_id: null // Will be set after order creation
+        }),
+      });
+
+      const bookingResult = await bookingResponse.json();
+
+      if (!bookingResult.success || !bookingResult.data) {
+        alert('Failed to create booking. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Store the booking ID to use later
+      const bookingId = bookingResult.data.id;
+
       // Create Razorpay order
       const orderResponse = await fetch('/api/payments/create-order', {
         method: 'POST',
@@ -97,6 +131,22 @@ const StepThree = ({ goToStep }) => {
         return;
       }
 
+      // Update the booking with the Razorpay order ID
+      const updateResponse = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          razorpay_order_id: orderData.orderId
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        console.error('Failed to update booking with order ID');
+      }
+
       // Razorpay options
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -108,44 +158,41 @@ const StepThree = ({ goToStep }) => {
         handler: async function (response) {
           // Set payment processing state to show loading screen
           setIsPaymentProcessing(true);
+          // Store flag in sessionStorage to indicate payment processing for AuthContext
+          sessionStorage.setItem('isPaymentProcessing', 'true');
           
-          // On payment success, submit booking
+          // Update the existing booking with payment details
           try {
-            const bookingResponse = await fetch('/api/bookings', {
-              method: 'POST',
+            const updateBookingResponse = await fetch(`/api/bookings/${bookingId}`, {
+              method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({
-                room_id: bookingData.room_id,
-                check_in_date: bookingData.checkInDate,
-                check_out_date: bookingData.checkOutDate,
-                check_in_time: checkInTime24,
-                total_guests: bookingData.totalGuests || 1,
-                special_requests: bookingData.specialRequests || '',
-                phone: bookingData.phone || '',
-                total_amount: bookingData.totalAmount,
-                booking_status: 'confirmed',
-                razorpay_order_id: response.razorpay_order_id,
                 transaction_id: response.razorpay_payment_id,
-                payment_status: 'paid'
-              })
+                payment_status: 'success',
+                booking_status: 'Confirmed'
+              }),
             });
 
-            const result = await bookingResponse.json();
+            const updateResult = await updateBookingResponse.json();
 
-            if (result.success) {
-              sessionStorage.setItem('bookingData', JSON.stringify(result.data));
+            if (updateResult.success) {
+              // Store booking ID in sessionStorage for confirmation page
+              sessionStorage.setItem('bookingData', JSON.stringify(updateResult.data));
               
-              // Send confirmation emails
+              // Clear payment processing flag
+              sessionStorage.removeItem('isPaymentProcessing');
+              
+              // Send confirmation email
               try {
                 await fetch('/api/send-booking-emails', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
-                  body: JSON.stringify({ booking_id: result.data.id }),
+                  body: JSON.stringify({ booking_id: bookingId }),
                 });
               } catch (emailError) {
                 console.error('Email sending failed:', emailError);
@@ -159,9 +206,11 @@ const StepThree = ({ goToStep }) => {
               window.location.href = '/payment-failed';
             }
           } catch (error) {
-            console.error('Booking submission error:', error);
+            console.error('Booking update error:', error);
             alert('An error occurred while confirming your booking. Please contact support.');
             setIsPaymentProcessing(false); // Reset loading state on error
+            // Clear payment processing flag on error
+            sessionStorage.removeItem('isPaymentProcessing');
           }
         },
         prefill: {
@@ -179,6 +228,8 @@ const StepThree = ({ goToStep }) => {
           // This runs when user closes the payment modal without completing payment
           setIsSubmitting(false);
           setIsPaymentProcessing(false);
+          // Clear payment processing flag
+          sessionStorage.removeItem('isPaymentProcessing');
           alert('Payment was cancelled. Please try again if you wish to complete your booking.');
         }
       };
@@ -187,6 +238,8 @@ const StepThree = ({ goToStep }) => {
       rzp.open();
     } catch (error) {
       console.error('Payment initiation error:', error);
+      // Clear payment processing flag on error
+      sessionStorage.removeItem('isPaymentProcessing');
       alert('An error occurred while initiating payment. Please try again.');
     } finally {
       setIsSubmitting(false);

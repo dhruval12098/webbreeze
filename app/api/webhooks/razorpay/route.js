@@ -130,7 +130,9 @@ async function handlePaymentFailed(payment) {
       
       // Trigger additional payment failure notifications
       try {
-        await fetch('/api/payment-failed', {
+        // Using absolute URL for server-side fetch
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        await fetch(`${baseUrl}/api/payment-failed`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -167,7 +169,8 @@ async function sendBookingConfirmationEmail(booking) {
     }
 
     // Send email notification
-    const emailResponse = await fetch('/api/send-booking-emails', {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const emailResponse = await fetch(`${baseUrl}/api/send-booking-emails`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

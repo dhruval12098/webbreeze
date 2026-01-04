@@ -5,6 +5,7 @@ import { Heart, Edit, LogOut } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import BookingHistory from '../components/profile/BookingHistory';
+import { reconcilePendingBookings } from '@/app/lib/paymentReconciliation';
 
 const Page = () => {
   const [loading, setLoading] = useState(true);
@@ -33,7 +34,12 @@ const Page = () => {
     
     // Always fetch fresh user data from the API
     fetchUserData();
-  }, [token, authLoading, isAdminAuthenticated, isUserAuthenticated, router]);
+    
+    // Reconcile any pending bookings that might not have been updated due to session issues
+    if (user?.id) {
+      reconcilePendingBookings(user.id);
+    }
+  }, [token, authLoading, isAdminAuthenticated, isUserAuthenticated, router, user]);
 
   // Effect to handle auth state when user data fetch fails
   useEffect(() => {

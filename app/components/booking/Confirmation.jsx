@@ -4,20 +4,27 @@ import { CheckCircle } from 'lucide-react';
 import BookingSidebar from './BookingSidebar';
 import ProgressBar from './ProgressBar';
 import { useAuth } from '@/app/context/AuthContext';
+import { reconcilePendingBookings } from '@/app/lib/paymentReconciliation';
 
 const Confirmation = ({ goToStep }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth(); // Get user info as well
   
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated and not in payment processing
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    const isPaymentProcessing = sessionStorage.getItem('isPaymentProcessing');
+    if (!loading && !isAuthenticated && !isPaymentProcessing) {
       alert('Please log in to view your booking confirmation');
       window.location.href = '/login';
     }
-  }, [isAuthenticated, loading]);
+    
+    // Reconcile any pending bookings after confirmation
+    if (user?.id && isAuthenticated) {
+      reconcilePendingBookings(user.id);
+    }
+  }, [isAuthenticated, loading, user]);
   
-  // Don't render if not authenticated
-  if (!loading && !isAuthenticated) {
+  // Don't render if not authenticated and not in payment processing
+  if (!loading && !isAuthenticated && !sessionStorage.getItem('isPaymentProcessing')) {
     return null; // The redirect will happen before this renders
   }
   
@@ -25,6 +32,7 @@ const Confirmation = ({ goToStep }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       sessionStorage.removeItem('bookingData');
+      sessionStorage.removeItem('isPaymentProcessing'); // Clear payment processing flag as well
     }, 5000); // Clear after 5 seconds
     
     return () => {

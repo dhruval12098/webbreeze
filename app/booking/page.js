@@ -14,15 +14,16 @@ const Page = () => {
 
   const goToStep = (step) => setCurrentStep(step);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated and not in payment processing
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    const isPaymentProcessing = sessionStorage.getItem('isPaymentProcessing');
+    if (!loading && !isAuthenticated && !isPaymentProcessing) {
       window.location.href = '/login';
     }
   }, [isAuthenticated, loading]);
 
-  // Don't render if not authenticated
-  if (!loading && !isAuthenticated) {
+  // Don't render if not authenticated and not in payment processing
+  if (!loading && !isAuthenticated && !sessionStorage.getItem('isPaymentProcessing')) {
     return null; // The redirect will happen before this renders
   }
 

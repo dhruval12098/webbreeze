@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
 import { Download } from 'lucide-react'; // Import the download icon
 import { generateReceiptPDF } from '@/app/lib/receiptGenerator'; // Import the PDF generator
+import { reconcilePendingBookings } from '@/app/lib/paymentReconciliation'; // Import reconciliation function
 
 const BookingHistory = () => {
   const [bookings, setBookings] = useState([]);
@@ -18,6 +19,11 @@ const BookingHistory = () => {
       }
 
       try {
+        // First, reconcile any pending bookings that might not have been updated due to session issues
+        if (user?.id) {
+          await reconcilePendingBookings(user.id);
+        }
+        
         const response = await fetch('/api/bookings', {
           headers: {
             'authorization': `Bearer ${token}`
@@ -40,7 +46,7 @@ const BookingHistory = () => {
     };
 
     fetchBookings();
-  }, [token]);
+  }, [token, user]);
 
   // Function to handle PDF download
   const handleDownloadReceipt = (booking) => {
