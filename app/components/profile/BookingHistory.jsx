@@ -115,41 +115,21 @@ const BookingHistory = () => {
           name: 'Breeze and Grains',
           description: 'Room Booking Payment',
           handler: async function (response) {
-            // Update the existing booking with payment details
-            try {
-              const updateBookingResponse = await fetch(`/api/bookings/${booking.id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  transaction_id: response.razorpay_payment_id,
-                  payment_status: 'success',
-                  booking_status: 'confirmed'
-                }),
-              });
-
-              const updateResult = await updateBookingResponse.json();
-
-              if (updateResult.success) {
-                alert('Payment completed successfully! Your booking is now confirmed.');
-                // Refresh the booking list
-                const response = await fetch('/api/bookings', {
-                  headers: {
-                    'authorization': `Bearer ${token}`
-                  }
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                  setBookings(result.data);
-                  setHasLoaded(false); // Reset flag to allow future fetches
-                }
-              } else {
-                alert('Payment was successful but booking confirmation failed. Please contact support.');
+            // Payment completed successfully, show success message
+            alert('Payment completed successfully! Your booking is now being confirmed. This may take a few seconds as our system processes the payment...');
+            // Refresh the booking list to show updated status
+            const response = await fetch('/api/bookings', {
+              headers: {
+                'authorization': `Bearer ${token}`
               }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+              setBookings(result.data);
+              setHasLoaded(false); // Reset flag to allow future fetches
+            }
             } catch (error) {
               console.error('Booking update error:', error);
               alert('An error occurred while confirming your booking. Please contact support.');
