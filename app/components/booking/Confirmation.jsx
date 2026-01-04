@@ -12,33 +12,49 @@ const Confirmation = ({ goToStep }) => {
   // Redirect to login if not authenticated and not in payment processing
   useEffect(() => {
     const isPaymentProcessing = sessionStorage.getItem('isPaymentProcessing');
+    const paymentResult = sessionStorage.getItem('paymentResult');
+    
+    console.log('Confirmation page loaded');
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('loading:', loading);
+    console.log('isPaymentProcessing:', isPaymentProcessing);
+    console.log('paymentResult:', paymentResult);
+    
+    // Check if payment was successful, if not redirect to payment failed page
+    if (paymentResult === 'failed') {
+      console.log('Payment failed detected, redirecting to payment-failed page');
+      window.location.href = '/payment-failed';
+      return;
+    }
+    
+    // Safety net: check if booking was server-confirmed
+    const confirmed = sessionStorage.getItem('bookingConfirmed');
+    if (!confirmed && paymentResult !== 'success') {
+      console.log('No server confirmation and not successful payment, redirecting to payment-failed page');
+      window.location.href = '/payment-failed';
+      return;
+    }
+    
     if (!loading && !isAuthenticated && !isPaymentProcessing) {
+      console.log('Not authenticated and not in payment processing, redirecting to login');
       alert('Please log in to view your booking confirmation');
       window.location.href = '/login';
     }
     
     // Reconcile any pending bookings after confirmation
     if (user?.id && isAuthenticated) {
+      console.log('Reconciling pending bookings');
       reconcilePendingBookings(user.id);
     }
   }, [isAuthenticated, loading, user]);
   
   // Don't render if not authenticated and not in payment processing
   if (!loading && !isAuthenticated && !sessionStorage.getItem('isPaymentProcessing')) {
+    console.log('Not authenticated and not in payment processing, not rendering');
     return null; // The redirect will happen before this renders
   }
   
-  // Clear booking data after a delay to ensure user sees the confirmation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      sessionStorage.removeItem('bookingData');
-      sessionStorage.removeItem('isPaymentProcessing'); // Clear payment processing flag as well
-    }, 5000); // Clear after 5 seconds
-    
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
+
 
   return (
     <div className="w-full min-h-screen flex justify-center items-start py-8 md:py-12 bg-gray-50">
@@ -88,14 +104,28 @@ const Confirmation = ({ goToStep }) => {
           <button 
             className="w-full max-w-2xl bg-[#594B00] text-white p-3 rounded-full font-sans text-base md:text-lg mb-3 hover:bg-[#594B00]/90 transition"
             style={{ fontFamily: "Plus Jakarta Sans" }}
-            onClick={() => window.location.href = "/profile"}
+            onClick={() => {
+              // Clear all payment-related flags when navigating away
+              sessionStorage.removeItem('bookingData');
+              sessionStorage.removeItem('isPaymentProcessing');
+              sessionStorage.removeItem('paymentResult');
+              sessionStorage.removeItem('paymentResponse');
+              window.location.href = "/profile";
+            }}
           >
             View Your Booking
           </button>
           <button 
             className="w-full max-w-2xl bg-[#FFFBE6] text-[#594B00] p-3 rounded-full font-sans text-base md:text-lg hover:bg-[#594B00]/10 transition border border-[#594B00]/30"
             style={{ fontFamily: "Plus Jakarta Sans" }}
-            onClick={() => window.location.href = "/"}
+            onClick={() => {
+              // Clear all payment-related flags when navigating away
+              sessionStorage.removeItem('bookingData');
+              sessionStorage.removeItem('isPaymentProcessing');
+              sessionStorage.removeItem('paymentResult');
+              sessionStorage.removeItem('paymentResponse');
+              window.location.href = "/";
+            }}
           >
             Back to Home
           </button>

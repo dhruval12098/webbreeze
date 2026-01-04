@@ -115,7 +115,16 @@ const BookingHistory = () => {
           name: 'Breeze and Grains',
           description: 'Room Booking Payment',
           handler: async function (response) {
+            console.log('BookingHistory payment handler executed');
+            console.log('Payment response:', response);
+            
+            // Set payment processing state
+            sessionStorage.setItem('paymentResult', 'success');
+            sessionStorage.setItem('paymentResponse', JSON.stringify(response));
+            sessionStorage.setItem('isPaymentProcessing', 'true');
+            
             try {
+              console.log('Updating booking with payment details from BookingHistory...');
               // Update the existing booking with payment details
               const updateBookingResponse = await fetch(`/api/bookings/${booking.id}`, {
                 method: 'PUT',
@@ -131,8 +140,10 @@ const BookingHistory = () => {
               });
 
               const updateResult = await updateBookingResponse.json();
+              console.log('Booking update response from BookingHistory:', updateResult);
 
               if (updateResult.success) {
+                console.log('Booking updated successfully from BookingHistory');
                 alert('Payment completed successfully! Your booking is now confirmed.');
                 // Refresh the booking list
                 const response = await fetch('/api/bookings', {
@@ -147,12 +158,18 @@ const BookingHistory = () => {
                   setBookings(result.data);
                   setHasLoaded(false); // Reset flag to allow future fetches
                 }
+                
+                // Clear payment processing flag
+                sessionStorage.removeItem('isPaymentProcessing');
               } else {
+                console.error('Booking update failed from BookingHistory:', updateResult.error);
                 alert('Payment was successful but booking confirmation failed. Please contact support.');
+                sessionStorage.setItem('paymentResult', 'failed');
               }
             } catch (error) {
               console.error('Booking update error:', error);
               alert('An error occurred while confirming your booking. Please contact support.');
+              sessionStorage.setItem('paymentResult', 'failed');
             }
           },
           prefill: {

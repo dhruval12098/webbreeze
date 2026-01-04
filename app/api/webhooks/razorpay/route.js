@@ -11,12 +11,17 @@ const supabase = createClient(
 
 export async function POST(request) {
   try {
+    console.log('Razorpay webhook received - request processing started');
+    
     // Get the raw body for signature verification
     const rawBody = await request.text();
     
     // Get headers
     const signature = request.headers.get('x-razorpay-signature');
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    console.log('Webhook signature received:', signature);
+    console.log('Webhook secret configured:', !!secret);
 
     if (!secret) {
       console.error('Razorpay webhook secret not configured');
@@ -29,6 +34,10 @@ export async function POST(request) {
       .update(rawBody)
       .digest('hex');
 
+    console.log('Expected signature:', expectedSignature);
+    console.log('Received signature:', signature);
+    console.log('Signature match:', expectedSignature === signature);
+
     if (expectedSignature !== signature) {
       console.error('Razorpay webhook signature verification failed');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -39,12 +48,15 @@ export async function POST(request) {
     const event = payload.event;
     const entity = payload.payload?.payment?.entity;
 
-    console.log('Razorpay webhook received:', event);
+    console.log('Parsed webhook payload:', { event, entity });
 
     // Handle different webhook events
     // Only handle payment.captured to avoid duplicate updates
     if (event === 'payment.captured' && entity) {
+      console.log('Processing payment.captured event');
       const { id: paymentId, order_id: orderId } = entity;
+      
+      console.log('Updating booking with payment details:', { paymentId, orderId });
       
       // Update booking with payment details
       const { data: booking, error } = await supabase
@@ -69,6 +81,8 @@ export async function POST(request) {
         
         // Send booking confirmation email
         if (booking) {
+          console.log('Sending booking confirmation email for booking:', booking.id);
+          
           // Fetch user details to get email
           const { data: user, error: userError } = await supabase
             .from('users')
@@ -79,6 +93,8 @@ export async function POST(request) {
           if (userError) {
             console.error('Error fetching user for email:', userError);
           } else {
+            console.log('Sending confirmation email to:', user.email);
+            
             // Send email notification
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
             const emailResponse = await fetch(`${baseUrl}/api/send-booking-emails`, {
@@ -95,12 +111,17 @@ export async function POST(request) {
 
             if (!emailResponse.ok) {
               console.error('Failed to send booking confirmation email');
+            } else {
+              console.log('Booking confirmation email sent successfully');
             }
           }
         }
       }
     } else if (event === 'payment.failed' && entity) {
+      console.log('Processing payment.failed event');
       const { id: paymentId, order_id: orderId } = entity;
+      
+      console.log('Updating booking with payment failure:', { paymentId, orderId });
       
       // Update booking with payment failure
       const { data: booking, error } = await supabase
@@ -124,6 +145,8 @@ export async function POST(request) {
         
         // Send email notification to customer about failed payment
         if (booking) {
+          console.log('Sending payment failure email for booking:', booking.id);
+          
           // Fetch user details to get email
           const { data: user, error: userError } = await supabase
             .from('users')
@@ -134,6 +157,8 @@ export async function POST(request) {
           if (userError) {
             console.error('Error fetching user for email:', userError);
           } else {
+            console.log('Sending payment failure email to:', user.email);
+            
             // Create a temporary email API endpoint for failed payments
             const emailData = {
               to: user.email,
@@ -187,11 +212,15 @@ export async function POST(request) {
             };
 
             await transporter.sendMail(mailOptions);
+            console.log('Payment failure email sent successfully');
           }
         }
       }
+    } else {
+      console.log('Unhandled event or missing entity:', { event, hasEntity: !!entity });
     }
 
+    console.log('Webhook processing completed successfully');
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('Error processing Razorpay webhook:', error);
