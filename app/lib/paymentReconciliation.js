@@ -29,6 +29,8 @@ export async function reconcilePendingBookings(userId) {
     for (const booking of pendingBookings) {
       if (booking.razorpay_order_id) {
         try {
+          // Add a small delay to prevent rate limiting
+          await new Promise(resolve => setTimeout(resolve, 200));
           // Verify payment status with Razorpay
           const paymentStatus = await verifyRazorpayPayment(booking.razorpay_order_id);
           
@@ -38,14 +40,14 @@ export async function reconcilePendingBookings(userId) {
               .from('bookings')
               .update({
                 payment_status: 'success',
-                booking_status: 'Confirmed',
+                booking_status: 'confirmed',
                 transaction_id: paymentStatus.paymentId,
                 updated_at: new Date().toISOString()
               })
               .eq('id', booking.id);
 
             if (updateError) {
-              console.error('Error updating booking:', updateError);
+              console.error('Error updating booking:', updateError.message || updateError);
             } else {
               updatedCount++;
               
@@ -62,6 +64,20 @@ export async function reconcilePendingBookings(userId) {
                 console.error('Email sending failed:', emailError);
                 // Don't fail the entire process if email fails
               }
+            }
+          } else if (paymentStatus.success === false && paymentStatus.paymentStatus === 'failed') {
+            // Update the booking to cancelled if payment verification failed
+            const { error: updateError } = await supabase
+              .from('bookings')
+              .update({
+                payment_status: 'failed',
+                booking_status: 'cancelled',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', booking.id);
+
+            if (updateError) {
+              console.error('Error updating booking to cancelled:', updateError.message || updateError);
             }
           }
         } catch (paymentError) {
@@ -95,6 +111,15 @@ async function verifyRazorpayPayment(orderId) {
       body: JSON.stringify({ order_id: orderId }),
     });
 
+    // Check if the response status is OK before parsing JSON
+    if (!response.ok) {
+      console.error('Razorpay API error:', response.status);
+      return {
+        success: false,
+        paymentStatus: 'failed'
+      };
+    }
+    
     const result = await response.json();
 
     if (result.success) {

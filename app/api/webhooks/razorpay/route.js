@@ -78,6 +78,7 @@ async function handlePaymentCaptured(payment) {
         payment_method: payment.method,
         payment_amount: payment.amount / 100, // Convert from paise to rupees
         payment_date: new Date().toISOString(),
+        booking_status: 'confirmed', // Update booking status to confirmed
         updated_at: new Date().toISOString()
       })
       .eq('razorpay_order_id', payment.order_id)
@@ -111,6 +112,7 @@ async function handlePaymentFailed(payment) {
         payment_status: 'failed',
         payment_method: payment.method,
         payment_amount: payment.amount / 100, // Convert from paise to rupees
+        booking_status: 'cancelled', // Update booking status to cancelled
         updated_at: new Date().toISOString()
       })
       .eq('razorpay_order_id', payment.order_id)
@@ -277,7 +279,7 @@ async function handleOrderPaid(order, payment) {
         payment_method: payment.method,
         payment_amount: payment.amount / 100, // Convert from paise to rupees
         payment_date: new Date().toISOString(),
-        booking_status: 'Confirmed', // Update booking status to confirmed
+        booking_status: 'confirmed', // Update booking status to confirmed
         updated_at: new Date().toISOString()
       })
       .eq('razorpay_order_id', order.id)

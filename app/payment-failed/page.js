@@ -99,7 +99,7 @@ const PaymentFailedPage = () => {
 
         {/* Additional Info */}
         <div className="mt-8 text-center text-gray-600 text-sm">
-          <p>Reference: {new Date().toISOString().slice(0, 19).replace('T', ' ')}</p>
+          <p>Reference: {typeof window !== 'undefined' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : 'Loading...'}</p>
         </div>
       </div>
     </div>

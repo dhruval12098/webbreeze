@@ -8,6 +8,7 @@ const BookingHistory = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasLoaded, setHasLoaded] = useState(false); // Flag to prevent continuous reloading
   const { token, user } = useAuth(); // Get user info as well
 
   useEffect(() => {
@@ -18,7 +19,14 @@ const BookingHistory = () => {
         return;
       }
 
+      // Prevent multiple fetches if already loaded
+      if (hasLoaded) {
+        return;
+      }
+
       try {
+        setLoading(true);
+        
         // First, reconcile any pending bookings that might not have been updated due to session issues
         if (user?.id) {
           await reconcilePendingBookings(user.id);
@@ -34,6 +42,7 @@ const BookingHistory = () => {
 
         if (result.success) {
           setBookings(result.data);
+          setHasLoaded(true); // Set flag to prevent reloading
         } else {
           setError(result.error || 'Failed to fetch bookings');
         }
@@ -46,11 +55,122 @@ const BookingHistory = () => {
     };
 
     fetchBookings();
-  }, [token, user]);
+  }, [token, user, hasLoaded]); // Added hasLoaded to dependency array
 
   // Function to handle PDF download
   const handleDownloadReceipt = (booking) => {
     generateReceiptPDF(booking, user);
+  };
+  
+  // Function to complete payment for a pending booking
+  const handleCompletePayment = async (booking) => {
+    try {
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: booking.total_amount }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderData.orderId) {
+        alert('Failed to create payment order. Please try again.');
+        return;
+      }
+
+      // Update the booking with the Razorpay order ID
+      const updateResponse = await fetch(`/api/bookings/${booking.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          razorpay_order_id: orderData.orderId
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        console.error('Failed to update booking with order ID');
+        alert('Failed to update booking. Please contact support.');
+        return;
+      }
+      
+      // Load Razorpay script if not already loaded
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+      
+      script.onload = () => {
+        // Razorpay options
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          order_id: orderData.orderId,
+          name: 'Breeze and Grains',
+          description: 'Room Booking Payment',
+          handler: async function (response) {
+            // Update the existing booking with payment details
+            try {
+              const updateBookingResponse = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  transaction_id: response.razorpay_payment_id,
+                  payment_status: 'success',
+                  booking_status: 'confirmed'
+                }),
+              });
+
+              const updateResult = await updateBookingResponse.json();
+
+              if (updateResult.success) {
+                alert('Payment completed successfully! Your booking is now confirmed.');
+                // Refresh the booking list
+                const response = await fetch('/api/bookings', {
+                  headers: {
+                    'authorization': `Bearer ${token}`
+                  }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                  setBookings(result.data);
+                  setHasLoaded(false); // Reset flag to allow future fetches
+                }
+              } else {
+                alert('Payment was successful but booking confirmation failed. Please contact support.');
+              }
+            } catch (error) {
+              console.error('Booking update error:', error);
+              alert('An error occurred while confirming your booking. Please contact support.');
+            }
+          },
+          prefill: {
+            name: user?.name || '',
+            email: user?.email || '',
+          },
+          theme: {
+            color: '#594B00',
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      };
+    } catch (error) {
+      console.error('Payment completion error:', error);
+      alert('An error occurred while initiating payment. Please try again.');
+    }
   };
 
   if (loading) {
@@ -125,6 +245,17 @@ const BookingHistory = () => {
                   <Download size={12} className="sm:size-3" />
                   <span className="text-xs sm:text-sm">Receipt</span>
                 </button>
+                
+                {/* Complete Payment Button for Pending Bookings */}
+                {booking.booking_status === 'pending' && (
+                  <button
+                    onClick={() => handleCompletePayment(booking)}
+                    className="mt-2 flex items-center justify-center sm:justify-start gap-1 px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors w-full sm:w-auto"
+                    title="Complete Payment"
+                  >
+                    Complete Payment
+                  </button>
+                )}
               </div>
             </div>
             {booking.special_requests && (

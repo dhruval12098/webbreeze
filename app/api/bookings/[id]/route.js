@@ -4,7 +4,7 @@ import { supabase } from '@/app/lib/supabaseClient';
 // PUT /api/bookings/[id] - Update an existing booking
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return new Response(
@@ -126,7 +126,7 @@ export async function PUT(request, { params }) {
 // GET /api/bookings/[id] - Get a specific booking
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return new Response(
@@ -261,7 +261,7 @@ export async function GET(request, { params }) {
 // DELETE /api/bookings/[id] - Delete a booking
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     if (!id) {
       return new Response(

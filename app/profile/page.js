@@ -36,10 +36,11 @@ const Page = () => {
     fetchUserData();
     
     // Reconcile any pending bookings that might not have been updated due to session issues
+    // Only run once when user data is available
     if (user?.id) {
       reconcilePendingBookings(user.id);
     }
-  }, [token, authLoading, isAdminAuthenticated, isUserAuthenticated, router, user]);
+  }, [token, authLoading, isAdminAuthenticated, isUserAuthenticated, router, user?.id]); // Only re-run when user ID changes
 
   // Effect to handle auth state when user data fetch fails
   useEffect(() => {

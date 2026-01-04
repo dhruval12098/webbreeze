@@ -182,6 +182,33 @@ export async function POST(request) {
     const userId = session.user_id;
     const bookingData = await request.json();
     
+    // Validate required fields
+    if (!bookingData.room_id || !bookingData.check_in_date || !bookingData.check_out_date || !bookingData.total_guests || !bookingData.total_amount) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing required booking data: room_id, check_in_date, check_out_date, total_guests, or total_amount' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Validate date formats
+    const checkInDate = new Date(bookingData.check_in_date);
+    const checkOutDate = new Date(bookingData.check_out_date);
+    
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid date format for check-in or check-out date' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Ensure check-out date is after check-in date
+    if (checkOutDate <= checkInDate) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Check-out date must be after check-in date' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Verify the user exists
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -217,11 +244,16 @@ export async function POST(request) {
       .from('bookings')
       .select('id')
       .eq('room_id', bookingData.room_id)
-      .or(`and(check_in_date.lt.${bookingData.check_out_date},check_out_date.gt.${bookingData.check_in_date})`)
+      .lt('check_in_date', bookingData.check_out_date)
+      .gt('check_out_date', bookingData.check_in_date)
       .in('booking_status', ['pending', 'confirmed']);
     
     if (overlapError) {
       console.error('Error checking for overlapping bookings:', overlapError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Error checking room availability: ' + overlapError.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
     } else if (overlappingBookings && overlappingBookings.length > 0) {
       return new Response(
         JSON.stringify({ success: false, error: 'Room is already booked for the selected dates' }),
@@ -234,6 +266,22 @@ export async function POST(request) {
       ...bookingData,
       user_id: userId
     };
+    
+    // Ensure booking status is lowercase to match database constraint
+    if (bookingToInsert.booking_status) {
+      bookingToInsert.booking_status = bookingToInsert.booking_status.toLowerCase();
+    } else {
+      // Set default status if not provided
+      bookingToInsert.booking_status = 'pending';
+    }
+    
+    // Ensure payment status is lowercase to match database constraint
+    if (bookingToInsert.payment_status) {
+      bookingToInsert.payment_status = bookingToInsert.payment_status.toLowerCase();
+    } else {
+      // Set default status if not provided
+      bookingToInsert.payment_status = 'pending';
+    }
     
     // Ensure check_in_time is properly formatted for database storage
     if (bookingData.check_in_time) {
@@ -255,17 +303,29 @@ export async function POST(request) {
     }
     
     // Insert the booking
-    const { data, error } = await supabase
-      .from('bookings')
-      .insert([bookingToInsert])
-      .select();
-
-    if (error) {
+    let insertResult;
+    try {
+      insertResult = await supabase
+        .from('bookings')
+        .insert([bookingToInsert])
+        .select();
+    } catch (insertError) {
+      console.error('Booking insertion error:', insertError);
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
+        JSON.stringify({ success: false, error: insertError.message || 'Database insertion failed' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
+    
+    if (insertResult.error) {
+      console.error('Booking insertion error:', insertResult.error);
+      return new Response(
+        JSON.stringify({ success: false, error: insertResult.error.message || 'Booking creation failed' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const data = insertResult.data;
 
     return new Response(
       JSON.stringify({ success: true, data: data[0] }),
