@@ -68,32 +68,52 @@ export async function POST(request) {
     const event = payload.event;
     console.log('Webhook event:', event);
 
+    // Process payment updates synchronously before responding to Razorpay
+    const paymentEntity = payload.payload?.payment?.entity;
+    const orderEntity = payload.payload?.order?.entity;
+    
     // Log payment.created events but don't process them
     if (event === 'payment.created') {
       console.log('Payment created event received (not processing):', payload.payload?.payment?.entity?.id);
     }
-
-    // RESPOND IMMEDIATELY TO RAZORPAY (within 5 seconds)
-    const response = NextResponse.json({ received: true });
-
-    // Process payment updates asynchronously (don't await)
-    processPaymentUpdate(payload).catch(err => {
-      console.error('Async payment processing error:', err);
-      // Also send error to external logging service if available
-      try {
-        // Optional: Send to external logging service
-        console.log('Payment processing error details:', {
-          error: err.message,
-          stack: err.stack,
-          payload: payload
-        });
-      } catch (logErr) {
-        console.error('Error logging error:', logErr);
+    
+    // Process payment updates synchronously with timeout protection
+    try {
+      // Create a timeout promise to prevent exceeding Razorpay's timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Webhook processing timeout')), 4000)
+      );
+      
+      if (event === 'payment.captured' && paymentEntity) {
+        console.log('About to handle payment captured:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
+        await Promise.race([
+          handlePaymentCaptured(paymentEntity),
+          timeoutPromise
+        ]);
+      } else if (event === 'payment.failed' && paymentEntity) {
+        console.log('About to handle payment failed:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
+        await Promise.race([
+          handlePaymentFailed(paymentEntity),
+          timeoutPromise
+        ]);
+      } else if (event === 'order.paid' && orderEntity) {
+        console.log('About to handle order paid:', { orderId: orderEntity.id, paymentId: paymentEntity?.id });
+        await Promise.race([
+          handleOrderPaid(orderEntity, paymentEntity),
+          timeoutPromise
+        ]);
+      } else {
+        console.log('Unhandled event or missing entity:', { event, hasPaymentEntity: !!paymentEntity, hasOrderEntity: !!orderEntity });
       }
-    });
+    } catch (error) {
+      console.error('Webhook processing error (may have timed out):', error);
+      
+      // Still respond to Razorpay to prevent webhook retries
+      // The error was caught, so we can continue to respond
+    }
 
-    console.log('Webhook response sent to Razorpay');
-    return response;
+    console.log('Webhook processing complete, responding to Razorpay');
+    return NextResponse.json({ received: true });
 
   } catch (error) {
     console.error('Error processing Razorpay webhook:', error);
@@ -101,39 +121,7 @@ export async function POST(request) {
   }
 }
 
-// Process payment updates asynchronously to avoid timeout
-async function processPaymentUpdate(payload) {
-  try {
-    const event = payload.event;
-    const paymentEntity = payload.payload?.payment?.entity;
-    const orderEntity = payload.payload?.order?.entity;
-    
-    console.log('Processing payment update asynchronously:', event);
 
-    if (event === 'payment.captured' && paymentEntity) {
-      console.log('About to handle payment captured:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
-      await handlePaymentCaptured(paymentEntity);
-    } else if (event === 'payment.failed' && paymentEntity) {
-      console.log('About to handle payment failed:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
-      await handlePaymentFailed(paymentEntity);
-    } else if (event === 'order.paid' && orderEntity) {
-      console.log('About to handle order paid:', { orderId: orderEntity.id, paymentId: paymentEntity?.id });
-      await handleOrderPaid(orderEntity, paymentEntity);
-    } else {
-      console.log('Unhandled event or missing entity:', { event, hasPaymentEntity: !!paymentEntity, hasOrderEntity: !!orderEntity });
-    }
-  } catch (error) {
-    console.error('Error in async payment processing:', error);
-    console.error('Full error details:', {
-      message: error.message,
-      stack: error.stack,
-      payload: payload
-    });
-    
-    // Re-throw the error so it can be caught by the calling function
-    throw error;
-  }
-}
 
 // Handle payment.captured event
 async function handlePaymentCaptured(entity) {
@@ -162,7 +150,7 @@ async function handlePaymentCaptured(entity) {
   
   // Update booking with payment details
   console.log('Attempting to update booking with order ID:', orderId);
-  const { data: booking, error } = await supabase
+  const { error } = await supabase
     .from('bookings')
     .update({
       transaction_id: paymentId,
@@ -173,15 +161,33 @@ async function handlePaymentCaptured(entity) {
       payment_date: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_order_id', orderId)
-    .select('*')
-    .single();
+    .eq('razorpay_order_id', orderId);
   
-  if (!error && booking) {
-    console.log('Successfully updated booking:', booking.id);
-  }
-
-  if (error) {
+  if (!error) {
+    console.log('Successfully initiated booking update for payment.captured:', orderId);
+    // Now fetch the updated booking to return it
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('razorpay_order_id', orderId)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching updated booking after payment.captured:', fetchError);
+      return; // Exit if we can't fetch the updated booking
+    }
+    
+    console.log('Successfully updated booking:', booking?.id);
+    
+    // Send confirmation email asynchronously (don't await)
+    if (booking) {
+      sendBookingConfirmationEmail(booking).catch(err => 
+        console.error('Failed to send booking confirmation email:', err)
+      );
+    }
+  } else {
+    console.error('Failed to update booking for payment.captured:', { error });
+    
     console.error('Error updating booking with payment success:', error);
     console.error('Booking update context:', { paymentId, orderId, amount, method });
     
@@ -200,14 +206,7 @@ async function handlePaymentCaptured(entity) {
     return;
   }
 
-  console.log('Booking updated with payment success:', booking?.id);
-  
-  // Send confirmation email asynchronously (don't await)
-  if (booking) {
-    sendBookingConfirmationEmail(booking).catch(err => 
-      console.error('Failed to send booking confirmation email:', err)
-    );
-  }
+  console.log('Booking updated with payment success:', 'completed');
 }
 
 // Handle payment.failed event
@@ -237,7 +236,7 @@ async function handlePaymentFailed(entity) {
   
   // Update booking with payment failure
   console.log('Attempting to update booking with order ID for failure:', orderId);
-  const { data: booking, error } = await supabase
+  const { error } = await supabase
     .from('bookings')
     .update({
       transaction_id: paymentId,
@@ -247,15 +246,33 @@ async function handlePaymentFailed(entity) {
       payment_amount: amount / 100, // Convert from paise to rupees
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_order_id', orderId)
-    .select('*')
-    .single();
+    .eq('razorpay_order_id', orderId);
   
-  if (!error && booking) {
-    console.log('Successfully updated booking for failure:', booking.id);
-  }
-
-  if (error) {
+  if (!error) {
+    console.log('Successfully initiated booking update for payment.failed:', orderId);
+    // Now fetch the updated booking to return it
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('razorpay_order_id', orderId)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching updated booking after payment.failed:', fetchError);
+      return; // Exit if we can't fetch the updated booking
+    }
+    
+    console.log('Successfully updated booking for failure:', booking?.id);
+    
+    // Send failure email asynchronously (don't await)
+    if (booking) {
+      sendPaymentFailureEmail(booking).catch(err => 
+        console.error('Failed to send payment failure email:', err)
+      );
+    }
+  } else {
+    console.error('Failed to update booking for payment.failed:', { error });
+    
     console.error('Error updating booking with payment failure:', error);
     console.error('Booking update context for failure:', { paymentId, orderId, amount, method });
     
@@ -274,14 +291,7 @@ async function handlePaymentFailed(entity) {
     return;
   }
 
-  console.log('Booking updated with payment failure:', booking?.id);
-  
-  // Send failure email asynchronously (don't await)
-  if (booking) {
-    sendPaymentFailureEmail(booking).catch(err => 
-      console.error('Failed to send payment failure email:', err)
-    );
-  }
+  console.log('Booking updated with payment failure:', 'completed');
 }
 
 // Handle order.paid event
@@ -314,7 +324,7 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
   
   // Update booking with order paid details
   console.log('Attempting to update booking with order ID for order.paid:', orderId);
-  const { data: booking, error } = await supabase
+  const { error } = await supabase
     .from('bookings')
     .update({
       transaction_id: paymentId,
@@ -325,15 +335,33 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
       payment_date: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_order_id', orderId)
-    .select('*')
-    .single();
+    .eq('razorpay_order_id', orderId);
   
-  if (!error && booking) {
-    console.log('Successfully updated booking for order.paid:', booking.id);
-  }
-
-  if (error) {
+  if (!error) {
+    console.log('Successfully initiated booking update for order.paid:', orderId);
+    // Now fetch the updated booking to return it
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('razorpay_order_id', orderId)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching updated booking after order.paid:', fetchError);
+      return; // Exit if we can't fetch the updated booking
+    }
+    
+    console.log('Successfully updated booking for order.paid:', booking?.id);
+    
+    // Send confirmation email asynchronously (don't await)
+    if (booking) {
+      sendBookingConfirmationEmail(booking).catch(err => 
+        console.error('Failed to send booking confirmation email:', err)
+      );
+    }
+  } else {
+    console.error('Failed to update booking for order.paid:', { error });
+    
     console.error('Error updating booking with order paid success:', error);
     console.error('Order paid update context:', { orderId, amount, method });
     
@@ -352,14 +380,7 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
     return;
   }
 
-  console.log('Booking updated with order paid success:', booking?.id);
-  
-  // Send confirmation email asynchronously (don't await)
-  if (booking) {
-    sendBookingConfirmationEmail(booking).catch(err => 
-      console.error('Failed to send booking confirmation email:', err)
-    );
-  }
+  console.log('Booking updated with order paid success:', 'completed');
 }
 
 // Send booking confirmation email (async, no await needed)
