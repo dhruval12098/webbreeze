@@ -1,0 +1,23 @@
+{
+  "name": "Breeze & Grains - Kerala Homestay",
+  "short_name": "Breeze & Grains",
+  "description": "Your peaceful Kerala retreat by the backwaters of Alappuzha",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0A3D2E",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "lang": "en",
+  "dir": "ltr"
+}

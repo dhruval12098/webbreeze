@@ -20,6 +20,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  manifest: "/manifest.json",
   other: {
     "google-site-verification": "-FXNG3dM3tOez9IV10shtu59vZtng_EptxTUBcIqMOI"
   }
