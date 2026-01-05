@@ -39,36 +39,49 @@ const Sidebar = ({ collapsed, onToggle }) => {
       `}
     >
 
-      {/* COLLAPSE BUTTON - now INSIDE sidebar */}
-      <button
-        onClick={handleToggle}
-        className="
-          absolute right-2 top-6 w-8 h-8
-          bg-white/15 border border-white/20 backdrop-blur 
-          rounded-xl flex items-center justify-center 
-          hover:bg-white/20 transition
-        "
-      >
-        {isCollapsed ? (
-          <ChevronRight size={18} className="text-white" />
-        ) : (
-          <ChevronLeft size={18} className="text-white" />
-        )}
-      </button>
+      {/* HEADER */}
+      <div className="flex items-start justify-between px-4 pt-4 pb-2">
+        <div className="flex flex-col items-start">
+          {!isCollapsed ? (
+            <>
+              <img 
+                src="/logo.svg" 
+                alt="Logo" 
+                className="w-44 object-contain mt-2"
+              />
 
-      {/* LOGO */}
-      <div className="p-6">
-        {!isCollapsed ? (
-          <h1 className="text-xl font-semibold tracking-tight text-white">
-            Admin Panel
-          </h1>
-        ) : (
-          <h1 className="text-xl font-bold text-white">A</h1>
-        )}
+              <h1 className="text-sm font-medium tracking-tight text-gray-300 mt-2">
+                Admin Panel
+              </h1>
+            </>
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">A</span>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={handleToggle}
+          className="
+            w-8 h-8 mt-1
+            bg-white/15 border border-white/20 backdrop-blur 
+            rounded-xl flex items-center justify-center 
+            hover:bg-white/20 transition
+          "
+        >
+          {isCollapsed ? (
+            <ChevronRight size={18} className="text-white" />
+          ) : (
+            <ChevronLeft size={18} className="text-white" />
+          )}
+        </button>
       </div>
 
+      <div className="border-t border-white/20 mx-4 mt-2"></div>
+
       {/* NAVIGATION */}
-      <nav className="flex flex-col gap-1 mt-2 px-3">
+      <nav className="flex flex-col gap-1 mt-3 px-3">
         {navItems.map((item, idx) => (
           <Link
             key={idx}
