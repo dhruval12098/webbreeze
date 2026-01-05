@@ -321,6 +321,9 @@ const RoomAmenitiesEditPage = () => {
             <div className="space-y-4">
               {/* Icon Upload */}
               <div>
+                <div className="mb-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  <strong>Note:</strong> After deleting images, please save changes to prevent accumulation in data storage.
+                </div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Icon
                 </label>
@@ -404,6 +407,9 @@ const RoomAmenitiesEditPage = () => {
           
           {/* Amenities List */}
           <div>
+            <div className="mb-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+              <strong>Note:</strong> After deleting images, please save changes to prevent accumulation in data storage.
+            </div>
             <h3 className="text-lg font-semibold text-[#0A3D2E] mb-4">
               Added Amenities
             </h3>

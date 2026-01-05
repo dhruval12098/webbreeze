@@ -204,6 +204,9 @@ const MeetYourHostEditPage = () => {
           
           {/* Image Upload */}
           <div>
+            <div className="mb-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+              <strong>Note:</strong> After deleting images, please save changes to prevent accumulation in data storage.
+            </div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Profile Image
             </label>

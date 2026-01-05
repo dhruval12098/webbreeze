@@ -257,6 +257,9 @@ const ImageGalleryEditPage = () => {
           {activeTab === "guest" && (
             <div className="space-y-6">
               <div>
+                <div className="mb-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  <strong>Note:</strong> After deleting images, please save changes to prevent accumulation in data storage.
+                </div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Upload Images (Max 20 images, up to 1 MB each)
                 </label>
@@ -326,6 +329,9 @@ const ImageGalleryEditPage = () => {
           {activeTab === "homestay" && (
             <div className="space-y-6">
               <div>
+                <div className="mb-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  <strong>Note:</strong> After deleting images, please save changes to prevent accumulation in data storage.
+                </div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Upload Images (Max 30 images, up to 1MB each)
                 </label>
