@@ -44,11 +44,20 @@ export async function POST(request) {
     }
 
     // Parse the webhook payload
-    const payload = JSON.parse(rawBody);
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('Failed to parse webhook payload:', parseError);
+      console.error('Raw body:', rawBody);
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+    
     const event = payload.event;
     const entity = payload.payload?.payment?.entity;
-
-    console.log('Parsed webhook payload:', { event, entity });
+    const eventId = payload?.payload?.payment?.entity?.id || payload?.payload?.order?.entity?.id;
+    
+    console.log('Parsed webhook payload:', { eventId, event, entity });
 
     // Handle different webhook events
     // Only handle payment.captured to avoid duplicate updates
@@ -76,6 +85,26 @@ export async function POST(request) {
 
       if (error) {
         console.error('Error updating booking with payment success:', error);
+        // Log additional context for debugging
+        console.error('Booking update context:', {
+          paymentId,
+          orderId,
+          amount: entity.amount,
+          method: entity.method
+        });
+        
+        // Try to find the booking to see its current state
+        const { data: currentBooking, error: fetchError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('razorpay_order_id', orderId)
+          .single();
+          
+        if (fetchError) {
+          console.error('Could not fetch current booking state:', fetchError);
+        } else {
+          console.log('Current booking state:', currentBooking);
+        }
       } else {
         console.log('Booking updated with payment success:', booking?.id);
         
@@ -140,6 +169,26 @@ export async function POST(request) {
 
       if (error) {
         console.error('Error updating booking with payment failure:', error);
+        // Log additional context for debugging
+        console.error('Booking update context for failure:', {
+          paymentId,
+          orderId,
+          amount: entity.amount,
+          method: entity.method
+        });
+        
+        // Try to find the booking to see its current state
+        const { data: currentBooking, error: fetchError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('razorpay_order_id', orderId)
+          .single();
+          
+        if (fetchError) {
+          console.error('Could not fetch current booking state:', fetchError);
+        } else {
+          console.log('Current booking state:', currentBooking);
+        }
       } else {
         console.log('Booking updated with payment failure:', booking?.id);
         
@@ -213,6 +262,91 @@ export async function POST(request) {
 
             await transporter.sendMail(mailOptions);
             console.log('Payment failure email sent successfully');
+          }
+        }
+      }
+    } else if (event === 'order.paid' && payload.payload?.order?.entity) {
+      console.log('Processing order.paid event');
+      const orderEntity = payload.payload.order.entity;
+      const paymentEntity = payload.payload?.payment?.entity;
+      
+      console.log('Updating booking with order paid details:', { orderId: orderEntity.id, paymentId: paymentEntity?.id });
+      
+      // Update booking with order paid details
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .update({
+          transaction_id: paymentEntity?.id,
+          payment_status: 'success',
+          booking_status: 'confirmed',
+          payment_method: paymentEntity?.method,
+          payment_amount: orderEntity.amount / 100, // Convert from paise to rupees
+          payment_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('razorpay_order_id', orderEntity.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating booking with order paid success:', error);
+        // Log additional context for debugging
+        console.error('Order paid update context:', {
+          orderId: orderEntity.id,
+          amount: orderEntity.amount,
+          method: paymentEntity?.method
+        });
+        
+        // Try to find the booking to see its current state
+        const { data: currentBooking, error: fetchError } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('razorpay_order_id', orderEntity.id)
+          .single();
+          
+        if (fetchError) {
+          console.error('Could not fetch current booking state for order.paid:', fetchError);
+        } else {
+          console.log('Current booking state for order.paid:', currentBooking);
+        }
+      } else {
+        console.log('Booking updated with order paid success:', booking?.id);
+        
+        // Send booking confirmation email
+        if (booking) {
+          console.log('Sending booking confirmation email for booking:', booking.id);
+          
+          // Fetch user details to get email
+          const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('email, name')
+            .eq('id', booking.user_id)
+            .single();
+
+          if (userError) {
+            console.error('Error fetching user for email:', userError);
+          } else {
+            console.log('Sending confirmation email to:', user.email);
+            
+            // Send email notification
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+            const emailResponse = await fetch(`${baseUrl}/api/send-booking-emails`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ 
+                booking_id: booking.id,
+                user_email: user.email,
+                user_name: user.name
+              }),
+            });
+
+            if (!emailResponse.ok) {
+              console.error('Failed to send booking confirmation email');
+            } else {
+              console.log('Booking confirmation email sent successfully');
+            }
           }
         }
       }

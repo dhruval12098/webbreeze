@@ -81,7 +81,72 @@ const StepThree = ({ goToStep }) => {
     }
 
     try {
-      // First, create the booking with pending status
+      // First, check if booking already exists and is confirmed to prevent duplicate payments
+      const existingBookingResponse = await fetch(`/api/bookings?user_id=${user.id}&room_id=${bookingData.room_id}&check_in_date=${bookingData.checkInDate}&check_out_date=${bookingData.checkOutDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const existingBookingResult = await existingBookingResponse.json();
+      
+      if (existingBookingResult.success && existingBookingResult.data && existingBookingResult.data.length > 0) {
+        const existingBooking = existingBookingResult.data.find(booking => 
+          booking.check_in_date === bookingData.checkInDate && 
+          booking.check_out_date === bookingData.checkOutDate && 
+          booking.total_amount === bookingData.totalAmount
+        );
+        
+        if (existingBooking) {
+          // If booking already exists and is confirmed/success, prevent duplicate payment
+          if (existingBooking.booking_status === 'confirmed' || existingBooking.payment_status === 'success') {
+            alert('This booking already exists and is confirmed. Please check your profile for details.');
+            setIsSubmitting(false);
+            return;
+          } else if (existingBooking.booking_status === 'pending' && existingBooking.razorpay_order_id) {
+            // If booking exists but is still pending with an order ID, allow user to complete payment
+            const bookingId = existingBooking.id;
+            // Create Razorpay order with existing booking
+            const orderResponse = await fetch('/api/payments/create-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ amount: bookingData.totalAmount }),
+            });
+
+            const orderData = await orderResponse.json();
+
+            if (!orderData.orderId) {
+              alert('Failed to create payment order. Please try again.');
+              setIsSubmitting(false);
+              return;
+            }
+
+            // Update the booking with the new Razorpay order ID
+            const updateResponse = await fetch(`/api/bookings/${bookingId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: orderData.orderId
+              }),
+            });
+
+            if (!updateResponse.ok) {
+              console.error('Failed to update booking with order ID');
+            }
+            
+            // Continue with payment process using existing booking
+            await initiatePaymentProcess(bookingId, orderData);
+            return;
+          }
+        }
+      }
+      
+      // Create new booking if no existing confirmed booking found
       const bookingResponse = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -169,65 +234,20 @@ const StepThree = ({ goToStep }) => {
           // Store flag in sessionStorage to indicate payment processing for AuthContext
           sessionStorage.setItem('isPaymentProcessing', 'true');
           
-          // Update the existing booking with payment details
-          try {
-            console.log('Updating booking with payment details...');
-            const updateBookingResponse = await fetch(`/api/bookings/${bookingId}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                transaction_id: response.razorpay_payment_id,
-                payment_status: 'success',
-                booking_status: 'confirmed'
-              }),
-            });
-
-            const updateResult = await updateBookingResponse.json();
-            console.log('Booking update response:', updateResult);
-
-            if (updateResult.success) {
-              console.log('Booking updated successfully, redirecting to confirmation');
-              
-              // Store booking ID in sessionStorage for confirmation page
-              sessionStorage.setItem('bookingData', JSON.stringify(updateResult.data));
-              
-              // Set a server-confirmed marker
-              sessionStorage.setItem('bookingConfirmed', 'true');
-              
-              // Send confirmation email
-              try {
-                console.log('Sending confirmation email...');
-                await fetch('/api/send-booking-emails', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ booking_id: bookingId }),
-                });
-                console.log('Confirmation email sent');
-              } catch (emailError) {
-                console.error('Email sending failed:', emailError);
-                // Don't block the flow if email fails
-              }
-              
-              goToStep(4);
-            } else {
-              console.error('Booking update failed:', updateResult.error);
-              // Redirect to payment failed page on booking failure
-              setIsPaymentProcessing(false);
-              sessionStorage.setItem('paymentResult', 'failed');
-              window.location.href = '/payment-failed';
-            }
-          } catch (error) {
-            console.error('Booking update error:', error);
-            alert('An error occurred while confirming your booking. Please contact support.');
-            setIsPaymentProcessing(false); // Reset loading state on error
-            sessionStorage.setItem('paymentResult', 'failed');
-            window.location.href = '/payment-failed';
-          }
+          // Store payment details for webhook verification
+          console.log('Payment successful, waiting for webhook to update booking status');
+          
+          // Store booking ID in sessionStorage for confirmation page
+          sessionStorage.setItem('bookingId', bookingId);
+          
+          // Set a server-confirmed marker
+          sessionStorage.setItem('bookingConfirmed', 'false'); // Will be updated by webhook
+          
+          // The webhook will handle updating the booking status
+          // Wait briefly for webhook to process before redirecting
+          setTimeout(() => {
+            goToStep(4);
+          }, 2000); // Wait 2 seconds to allow webhook to process
         },
         prefill: {
           name: user?.name || '',
@@ -261,8 +281,72 @@ const StepThree = ({ goToStep }) => {
       setIsSubmitting(false);
     }
   };
+  
+  // Function to initiate payment process
+  const initiatePaymentProcess = async (bookingId, orderData) => {
+    // Razorpay options
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      order_id: orderData.orderId,
+      name: 'Breeze and Grains',
+      description: 'Room Booking Payment',
+      handler: async function (response) {
+        console.log('Razorpay payment handler executed');
+        console.log('Payment response:', response);
+        
+        // Set payment processing state to show loading screen
+        setIsPaymentProcessing(true);
+        
+        // Store payment result in sessionStorage
+        sessionStorage.setItem('paymentResult', 'success');
+        sessionStorage.setItem('paymentResponse', JSON.stringify(response));
+        
+        // Store flag in sessionStorage to indicate payment processing for AuthContext
+        sessionStorage.setItem('isPaymentProcessing', 'true');
+        
+        // Store payment details for webhook verification
+        console.log('Payment successful, waiting for webhook to update booking status');
+        
+        // Store booking ID in sessionStorage for confirmation page
+        sessionStorage.setItem('bookingId', bookingId);
+        
+        // Set a server-confirmed marker
+        sessionStorage.setItem('bookingConfirmed', 'false'); // Will be updated by webhook
+        
+        // The webhook will handle updating the booking status
+        // Wait briefly for webhook to process before redirecting
+        setTimeout(() => {
+          goToStep(4);
+        }, 2000); // Wait 2 seconds to allow webhook to process
+      },
+      prefill: {
+        name: user?.name || '',
+        email: user?.email || '',
+      },
+      theme: {
+        color: '#594B00',
+      },
+    };
 
-  if (!bookingData) {
+    // Add event handlers for payment failure/cancellation
+    options.modal = {
+      ondismiss: function() {
+        // This runs when user closes the payment modal without completing payment
+        setIsSubmitting(false);
+        setIsPaymentProcessing(false);
+        // Clear payment processing flag
+        sessionStorage.removeItem('isPaymentProcessing');
+        alert('Payment was cancelled. Please try again if you wish to complete your booking.');
+      }
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
+if (!bookingData) {
     return (
       <div className="w-full min-h-screen flex justify-center items-center">
         <p>Loading booking details...</p>

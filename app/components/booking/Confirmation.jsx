@@ -7,18 +7,22 @@ import { useAuth } from '@/app/context/AuthContext';
 import { reconcilePendingBookings } from '@/app/lib/paymentReconciliation';
 
 const Confirmation = ({ goToStep }) => {
-  const { isAuthenticated, loading, user } = useAuth(); // Get user info as well
+  const { isAuthenticated, loading, user, token } = useAuth(); // Get user info as well
+  const [bookingVerified, setBookingVerified] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState(null);
   
   // Redirect to login if not authenticated and not in payment processing
   useEffect(() => {
     const isPaymentProcessing = sessionStorage.getItem('isPaymentProcessing');
     const paymentResult = sessionStorage.getItem('paymentResult');
+    const bookingId = sessionStorage.getItem('bookingId');
     
     console.log('Confirmation page loaded');
     console.log('isAuthenticated:', isAuthenticated);
     console.log('loading:', loading);
     console.log('isPaymentProcessing:', isPaymentProcessing);
     console.log('paymentResult:', paymentResult);
+    console.log('bookingId:', bookingId);
     
     // Check if payment was successful, if not redirect to payment failed page
     if (paymentResult === 'failed') {
@@ -27,12 +31,62 @@ const Confirmation = ({ goToStep }) => {
       return;
     }
     
-    // Safety net: check if booking was server-confirmed
-    const confirmed = sessionStorage.getItem('bookingConfirmed');
-    if (!confirmed && paymentResult !== 'success') {
-      console.log('No server confirmation and not successful payment, redirecting to payment-failed page');
-      window.location.href = '/payment-failed';
-      return;
+    // Verify booking status from server instead of relying on session storage
+    if (bookingId && isAuthenticated && token) {
+      const verifyBookingStatus = async () => {
+        try {
+          const response = await fetch(`/api/bookings/${bookingId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            setBookingDetails(result.data);
+            
+            // Check if booking is confirmed by webhook
+            if (result.data.booking_status === 'confirmed' && result.data.payment_status === 'success') {
+              setBookingVerified(true);
+              // Update session storage to reflect actual status
+              sessionStorage.setItem('bookingConfirmed', 'true');
+            } else {
+              // If not confirmed yet, try reconciliation
+              if (user?.id) {
+                await reconcilePendingBookings(user.id);
+                
+                // Re-check status after reconciliation
+                const recheckResponse = await fetch(`/api/bookings/${bookingId}`, {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                const recheckResult = await recheckResponse.json();
+                
+                if (recheckResult.success && recheckResult.data && 
+                    recheckResult.data.booking_status === 'confirmed' && 
+                    recheckResult.data.payment_status === 'success') {
+                  setBookingVerified(true);
+                  setBookingDetails(recheckResult.data);
+                  sessionStorage.setItem('bookingConfirmed', 'true');
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error verifying booking status:', error);
+        }
+      };
+      
+      verifyBookingStatus();
+      
+      // Set up interval to keep checking until booking is confirmed
+      const interval = setInterval(verifyBookingStatus, 2000);
+      
+      // Clear interval after 30 seconds to prevent endless checking
+      setTimeout(() => clearInterval(interval), 30000);
     }
     
     if (!loading && !isAuthenticated && !isPaymentProcessing) {
@@ -46,7 +100,7 @@ const Confirmation = ({ goToStep }) => {
       console.log('Reconciling pending bookings');
       reconcilePendingBookings(user.id);
     }
-  }, [isAuthenticated, loading, user]);
+  }, [isAuthenticated, loading, user, token]);
   
   // Don't render if not authenticated and not in payment processing
   if (!loading && !isAuthenticated && !sessionStorage.getItem('isPaymentProcessing')) {
