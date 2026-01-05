@@ -77,36 +77,22 @@ export async function POST(request) {
       console.log('Payment created event received (not processing):', payload.payload?.payment?.entity?.id);
     }
     
-    // Process payment updates synchronously with timeout protection
+    // Process payment updates synchronously
     try {
-      // Create a timeout promise to prevent exceeding Razorpay's timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Webhook processing timeout')), 4000)
-      );
-      
       if (event === 'payment.captured' && paymentEntity) {
         console.log('About to handle payment captured:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
-        await Promise.race([
-          handlePaymentCaptured(paymentEntity),
-          timeoutPromise
-        ]);
+        await handlePaymentCaptured(paymentEntity);
       } else if (event === 'payment.failed' && paymentEntity) {
         console.log('About to handle payment failed:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
-        await Promise.race([
-          handlePaymentFailed(paymentEntity),
-          timeoutPromise
-        ]);
+        await handlePaymentFailed(paymentEntity);
       } else if (event === 'order.paid' && orderEntity) {
         console.log('About to handle order paid:', { orderId: orderEntity.id, paymentId: paymentEntity?.id });
-        await Promise.race([
-          handleOrderPaid(orderEntity, paymentEntity),
-          timeoutPromise
-        ]);
+        await handleOrderPaid(orderEntity, paymentEntity);
       } else {
         console.log('Unhandled event or missing entity:', { event, hasPaymentEntity: !!paymentEntity, hasOrderEntity: !!orderEntity });
       }
     } catch (error) {
-      console.error('Webhook processing error (may have timed out):', error);
+      console.error('Webhook processing error:', error);
       
       // Still respond to Razorpay to prevent webhook retries
       // The error was caught, so we can continue to respond
