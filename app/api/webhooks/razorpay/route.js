@@ -77,22 +77,36 @@ export async function POST(request) {
       console.log('Payment created event received (not processing):', payload.payload?.payment?.entity?.id);
     }
     
-    // Process payment updates synchronously
+    // Process payment updates synchronously with timeout protection
     try {
+      // Create a timeout promise to prevent exceeding Razorpay's timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Webhook processing timeout')), 4000)
+      );
+      
       if (event === 'payment.captured' && paymentEntity) {
         console.log('About to handle payment captured:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
-        await handlePaymentCaptured(paymentEntity);
+        await Promise.race([
+          handlePaymentCaptured(paymentEntity),
+          timeoutPromise
+        ]);
       } else if (event === 'payment.failed' && paymentEntity) {
         console.log('About to handle payment failed:', { orderId: paymentEntity.order_id, paymentId: paymentEntity.id });
-        await handlePaymentFailed(paymentEntity);
+        await Promise.race([
+          handlePaymentFailed(paymentEntity),
+          timeoutPromise
+        ]);
       } else if (event === 'order.paid' && orderEntity) {
         console.log('About to handle order paid:', { orderId: orderEntity.id, paymentId: paymentEntity?.id });
-        await handleOrderPaid(orderEntity, paymentEntity);
+        await Promise.race([
+          handleOrderPaid(orderEntity, paymentEntity),
+          timeoutPromise
+        ]);
       } else {
         console.log('Unhandled event or missing entity:', { event, hasPaymentEntity: !!paymentEntity, hasOrderEntity: !!orderEntity });
       }
     } catch (error) {
-      console.error('Webhook processing error:', error);
+      console.error('Webhook processing error (may have timed out):', error);
       
       // Still respond to Razorpay to prevent webhook retries
       // The error was caught, so we can continue to respond
@@ -106,8 +120,6 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }
-
-
 
 // Handle payment.captured event
 async function handlePaymentCaptured(entity) {
@@ -124,15 +136,21 @@ async function handlePaymentCaptured(entity) {
   
   if (fetchError) {
     console.error('Error fetching existing booking:', fetchError);
-    return; // Exit if we can't find the booking
+    return;
   }
   
   if (!existingBooking) {
     console.error('No booking found with order ID:', orderId);
-    return; // Exit if no booking exists
+    return;
   }
   
   console.log('Found existing booking:', existingBooking.id);
+  
+  // CRITICAL FIX: Check if booking is already confirmed to prevent overwriting
+  if (existingBooking.payment_status === 'success' && existingBooking.booking_status === 'confirmed') {
+    console.log('Booking already confirmed, skipping update:', existingBooking.id);
+    return;
+  }
   
   // Update booking with payment details
   console.log('Attempting to update booking with order ID:', orderId);
@@ -143,7 +161,7 @@ async function handlePaymentCaptured(entity) {
       payment_status: 'success',
       booking_status: 'confirmed',
       payment_method: method,
-      payment_amount: amount / 100, // Convert from paise to rupees
+      payment_amount: amount / 100,
       payment_date: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
@@ -151,7 +169,7 @@ async function handlePaymentCaptured(entity) {
   
   if (!error) {
     console.log('Successfully initiated booking update for payment.captured:', orderId);
-    // Now fetch the updated booking to return it
+    
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
       .select('*')
@@ -160,12 +178,12 @@ async function handlePaymentCaptured(entity) {
       
     if (fetchError) {
       console.error('Error fetching updated booking after payment.captured:', fetchError);
-      return; // Exit if we can't fetch the updated booking
+      return;
     }
     
     console.log('Successfully updated booking:', booking?.id);
     
-    // Send confirmation email asynchronously (don't await)
+    // Send confirmation email asynchronously
     if (booking) {
       sendBookingConfirmationEmail(booking).catch(err => 
         console.error('Failed to send booking confirmation email:', err)
@@ -173,11 +191,8 @@ async function handlePaymentCaptured(entity) {
     }
   } else {
     console.error('Failed to update booking for payment.captured:', { error });
-    
-    console.error('Error updating booking with payment success:', error);
     console.error('Booking update context:', { paymentId, orderId, amount, method });
     
-    // Try to find the booking to see its current state
     const { data: currentBooking, error: fetchError } = await supabase
       .from('bookings')
       .select('*')
@@ -195,7 +210,7 @@ async function handlePaymentCaptured(entity) {
   console.log('Booking updated with payment success:', 'completed');
 }
 
-// Handle payment.failed event
+// Handle payment.failed event - CRITICAL FIX
 async function handlePaymentFailed(entity) {
   const { id: paymentId, order_id: orderId, method, amount } = entity;
   
@@ -210,15 +225,32 @@ async function handlePaymentFailed(entity) {
   
   if (fetchError) {
     console.error('Error fetching existing booking for failure:', fetchError);
-    return; // Exit if we can't find the booking
+    return;
   }
   
   if (!existingBooking) {
     console.error('No booking found with order ID for failure:', orderId);
-    return; // Exit if no booking exists
+    return;
   }
   
   console.log('Found existing booking for failure:', existingBooking.id);
+  
+  // CRITICAL FIX: DO NOT process failed payment if booking is already confirmed/successful
+  // This prevents a failed payment attempt from overwriting a successful one
+  if (existingBooking.payment_status === 'success' || existingBooking.booking_status === 'confirmed') {
+    console.log('Booking already successful/confirmed, ignoring failed payment event:', {
+      bookingId: existingBooking.id,
+      currentStatus: existingBooking.payment_status,
+      failedPaymentId: paymentId
+    });
+    return; // Exit without updating
+  }
+  
+  // Only update to failed if still in pending state
+  if (existingBooking.payment_status !== 'pending') {
+    console.log('Booking not in pending state, skipping failed payment update:', existingBooking.payment_status);
+    return;
+  }
   
   // Update booking with payment failure
   console.log('Attempting to update booking with order ID for failure:', orderId);
@@ -229,14 +261,15 @@ async function handlePaymentFailed(entity) {
       payment_status: 'failed',
       booking_status: 'cancelled',
       payment_method: method,
-      payment_amount: amount / 100, // Convert from paise to rupees
+      payment_amount: amount / 100,
       updated_at: new Date().toISOString()
     })
-    .eq('razorpay_order_id', orderId);
+    .eq('razorpay_order_id', orderId)
+    .eq('payment_status', 'pending'); // Additional safety: only update if still pending
   
   if (!error) {
     console.log('Successfully initiated booking update for payment.failed:', orderId);
-    // Now fetch the updated booking to return it
+    
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
       .select('*')
@@ -245,24 +278,21 @@ async function handlePaymentFailed(entity) {
       
     if (fetchError) {
       console.error('Error fetching updated booking after payment.failed:', fetchError);
-      return; // Exit if we can't fetch the updated booking
+      return;
     }
     
     console.log('Successfully updated booking for failure:', booking?.id);
     
-    // Send failure email asynchronously (don't await)
-    if (booking) {
+    // Only send failure email if booking was actually updated to failed status
+    if (booking && booking.payment_status === 'failed') {
       sendPaymentFailureEmail(booking).catch(err => 
         console.error('Failed to send payment failure email:', err)
       );
     }
   } else {
     console.error('Failed to update booking for payment.failed:', { error });
-    
-    console.error('Error updating booking with payment failure:', error);
     console.error('Booking update context for failure:', { paymentId, orderId, amount, method });
     
-    // Try to find the booking to see its current state
     const { data: currentBooking, error: fetchError } = await supabase
       .from('bookings')
       .select('*')
@@ -298,15 +328,21 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
   
   if (fetchError) {
     console.error('Error fetching existing booking for order.paid:', fetchError);
-    return; // Exit if we can't find the booking
+    return;
   }
   
   if (!existingBooking) {
     console.error('No booking found with order ID for order.paid:', orderId);
-    return; // Exit if no booking exists
+    return;
   }
   
   console.log('Found existing booking for order.paid:', existingBooking.id);
+  
+  // CRITICAL FIX: Check if booking is already confirmed to prevent duplicate processing
+  if (existingBooking.payment_status === 'success' && existingBooking.booking_status === 'confirmed') {
+    console.log('Booking already confirmed, skipping order.paid update:', existingBooking.id);
+    return;
+  }
   
   // Update booking with order paid details
   console.log('Attempting to update booking with order ID for order.paid:', orderId);
@@ -317,7 +353,7 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
       payment_status: 'success',
       booking_status: 'confirmed',
       payment_method: method,
-      payment_amount: amount / 100, // Convert from paise to rupees
+      payment_amount: amount / 100,
       payment_date: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
@@ -325,7 +361,7 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
   
   if (!error) {
     console.log('Successfully initiated booking update for order.paid:', orderId);
-    // Now fetch the updated booking to return it
+    
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
       .select('*')
@@ -334,12 +370,12 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
       
     if (fetchError) {
       console.error('Error fetching updated booking after order.paid:', fetchError);
-      return; // Exit if we can't fetch the updated booking
+      return;
     }
     
     console.log('Successfully updated booking for order.paid:', booking?.id);
     
-    // Send confirmation email asynchronously (don't await)
+    // Send confirmation email asynchronously
     if (booking) {
       sendBookingConfirmationEmail(booking).catch(err => 
         console.error('Failed to send booking confirmation email:', err)
@@ -347,11 +383,8 @@ async function handleOrderPaid(orderEntity, paymentEntity) {
     }
   } else {
     console.error('Failed to update booking for order.paid:', { error });
-    
-    console.error('Error updating booking with order paid success:', error);
     console.error('Order paid update context:', { orderId, amount, method });
     
-    // Try to find the booking to see its current state
     const { data: currentBooking, error: fetchError } = await supabase
       .from('bookings')
       .select('*')

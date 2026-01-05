@@ -115,7 +115,7 @@ const Navbar = () => {
         <div className="max-w-screen-xl mx-auto px-4 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center -my-2 ml-4 mr-4">
-            <img src="/logo.svg" alt="B&G Logo" className="h-24 w-auto brightness-0 invert" />
+            <img src="/logo.svg" alt="B&G Logo" className="h-6 w-auto brightness-0 invert" />
           </div>
 
           {/* Desktop Links */}
