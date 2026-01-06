@@ -5,8 +5,11 @@ import { X, Plus, Trash2 } from "lucide-react";
 import ConfirmationDialog from "../../../../components/common/ConfirmationDialog";
 import { supabase } from '@/app/lib/supabaseClient';
 import { uploadImageToStorage, deleteImageFromStorage } from '@/app/lib/imageService';
+import { useAuth } from '@/app/context/AuthContext';
+import { amenitiesApi } from '@/app/lib/apiClient';
 
 const RoomAmenitiesEditPage = () => {
+  const { token } = useAuth();
   const [amenitiesList, setAmenitiesList] = useState([]);
   const [newAmenity, setNewAmenity] = useState({
     icon: null,
@@ -25,9 +28,7 @@ const RoomAmenitiesEditPage = () => {
     const fetchAmenities = async () => {
       try {
         console.log('Fetching amenities from API...');
-        const response = await fetch('/api/amenities');
-        console.log('API response status:', response.status);
-        const result = await response.json();
+        const result = await amenitiesApi.getAll(token);
         console.log('Amenities API response:', result);
         
         const { data, success } = result;
@@ -141,17 +142,7 @@ const RoomAmenitiesEditPage = () => {
       
       console.log('Sending amenity data to API:', amenityData);
       
-      const response = await fetch('/api/amenities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(amenityData)
-      });
-      
-      console.log('API response status:', response.status);
-      
-      const result = await response.json();
+      const result = await amenitiesApi.create(amenityData, token);
       console.log('API response:', result);
       
       if (result.success) {
@@ -222,12 +213,8 @@ const RoomAmenitiesEditPage = () => {
           await deleteImageFromStorage(amenityToDelete.icon.url, supabase);
         }
         
-        // Delete from database
-        const response = await fetch(`/api/amenities/${amenityToDelete.id}`, {
-          method: 'DELETE'
-        });
-        
-        const result = await response.json();
+        // Delete from database using the amenities API with admin token
+        const result = await amenitiesApi.delete(amenityToDelete.id, token);
         
         if (result.success) {
           setAmenitiesList(prev => prev.filter(amenity => amenity.id !== amenityToDelete.id));
@@ -269,8 +256,8 @@ const RoomAmenitiesEditPage = () => {
     try {
       // In this implementation, amenities are saved individually when added
       // So "Save Changes" just confirms all changes are saved and refreshes the list
-      const response = await fetch('/api/amenities');
-      const { data, success } = await response.json();
+      const result = await amenitiesApi.getAll(token);
+      const { data, success } = result;
       
       if (success && data) {
         // Transform data to match component state structure

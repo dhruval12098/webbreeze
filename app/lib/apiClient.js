@@ -194,6 +194,23 @@ export const imageApi = {
 };
 
 /**
+ * Amenities API functions
+ */
+export const amenitiesApi = {
+  // Get all amenities
+  getAll: (token = null) => apiCall('/api/amenities', 'GET', null, {}, token),
+  
+  // Create a new amenity
+  create: (amenityData, token = null) => apiCall('/api/amenities', 'POST', amenityData, {}, token),
+  
+  // Update an amenity by ID
+  update: (id, amenityData, token = null) => apiCall(`/api/amenities/${id}`, 'PUT', amenityData, {}, token),
+  
+  // Delete an amenity by ID
+  delete: (id, token = null) => apiCall(`/api/amenities/${id}`, 'DELETE', null, {}, token)
+};
+
+/**
  * Admin Metrics API functions
  */
 export const adminMetricsApi = {
